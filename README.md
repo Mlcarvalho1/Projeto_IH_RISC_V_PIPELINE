@@ -86,3 +86,4 @@ Existem duas maneiras de nos enviar suas sugestões:
 
 2. **Pull Request**: Se você é familiarizado com o processo de pull requests, sinta-se à vontade para enviar suas alterações diretamente por meio de um pull request. Certifique-se de descrever claramente as alterações realizadas e o motivo por trás delas.
 # Projeto_IH_RISC_V_PIPELINE
+# Projeto_IH_RISC_V_PIPELINE
