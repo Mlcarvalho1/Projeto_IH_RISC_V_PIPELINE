@@ -13,7 +13,7 @@ module Controller (
     output logic       RegWrite, //! The register on the Write register input is written with the value on the Write data input
     output logic       MemRead , //! Data memory contents designated by the address input are put on the Read data output
     output logic       MemWrite, //! Data memory contents designated by the address input are replaced by the value on the Write data input.
-    output logic [1:0] ALUOp   , //! Signals the ALU Controller the type of instruction it will recieve
+    output logic [1:0] ALUOp   , //! Code to the ALU Controller, the type of instruction it will recieve
     //00: Load/Store
     //01: Control Transfer
     //10: Integer Computational
