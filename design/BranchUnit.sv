@@ -1,28 +1,26 @@
 `timescale 1ns / 1ps
 
-module BranchUnit #(
-    parameter PC_W = 9
-) (
-    input logic [PC_W-1:0] Cur_PC,
-    input logic [31:0] Imm,
-    input logic Branch,
-    input logic [31:0] AluResult,
-    output logic [31:0] PC_Imm,
-    output logic [31:0] PC_Four,
-    output logic [31:0] BrPC,
-    output logic PcSel
+module BranchUnit #(parameter PC_W = 9) (
+    input  logic [PC_W-1:0] current_PC  , //! Current Program Counter
+    input  logic [    31:0] imm         , //! Generated immediate from imm_Gen
+    input  logic            branch      , //! Signal from the Controller that the current instruction is a branch
+    input  logic [    31:0] ALU_result  , //! Result from ALU comparison
+    output logic [    31:0] next_PC_imm , //! PC+immediate
+    output logic [    31:0] next_PC_four, //! PC+4
+    output logic [    31:0] branch_PC   , //! PC+immediate if branch is taken, otherwise 0
+    output logic            PC_sel        //! Signal to PC Mux wether branch will be taken
+    //0: PC = PC+4
+    //1: PC = branch_PC
 );
 
-  logic Branch_Sel;
-  logic [31:0] PC_Full;
+    logic [31:0] PC_full;
+    assign PC_full      = {23'b0, current_PC};
+    assign next_PC_imm  = PC_full + imm;
+    assign next_PC_four = PC_full + 32'b100;
 
-  assign PC_Full = {23'b0, Cur_PC};
-
-  assign PC_Imm = PC_Full + Imm;
-  assign PC_Four = PC_Full + 32'b100;
-  assign Branch_Sel = Branch && AluResult[0];  // 0:Branch is taken; 1:Branch is not taken
-
-  assign BrPC = (Branch_Sel) ? PC_Imm : 32'b0;  // Branch -> PC+Imm   // Otherwise, BrPC value is not important
-  assign PcSel = Branch_Sel;  // 1:branch is taken; 0:branch is not taken(choose pc+4)
+    logic branch_result;
+    assign branch_result = branch && ALU_result[0];
+    assign branch_PC     = (branch_result) ? next_PC_imm : 32'b0;
+    assign PC_sel        = branch_result;
 
 endmodule
