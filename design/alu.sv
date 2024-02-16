@@ -19,6 +19,8 @@ module alu #(
                     ALUResult = $signed(SrcA) + $signed(SrcB);
                 4'b1000 : // Equal
                     ALUResult = (SrcA == SrcB) ? 1 : 0;
+                4'b0001 : // SUB
+                    ALUResult = $signed(SrcA) - $signed(SrcB);
                 default :
                     ALUResult = 0;
             endcase
