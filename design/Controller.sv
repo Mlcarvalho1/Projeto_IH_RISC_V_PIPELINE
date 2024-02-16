@@ -2,22 +2,22 @@
 
 module Controller (
     //Input
-    input  logic [6:0] Opcode  , //! 7-bit opcode field from the instruction
+    input  logic [6:0] opcode     , //! 7-bit opcode field from the instruction
     //Outputs
-    output logic       ALUSrc  , //! Signals Src Mux where the second ALU operand will come from
+    output logic       ALU_src    , //! Signals Src Mux where the second ALU operand will come from
     //0: The operand comes from the ID/EX Register (Read Data 2);
     //1: The operand comes from Imm_Gen (the immediate offset for Load/Store Instructions)
-    output logic       MemtoReg, //! Where the Write Back data will come from (Res MUX)
-    //0: The value fed to the register Write data input comes from the ALU.
-    //1: The value fed to the register Write data input comes from the Data Memory.
-    output logic       RegWrite, //! The register on the Write register input is written with the value on the Write data input
-    output logic       MemRead , //! Data memory contents designated by the address input are put on the Read data output
-    output logic       MemWrite, //! Data memory contents designated by the address input are replaced by the value on the Write data input.
-    output logic [1:0] ALUOp   , //! Code to the ALU Controller, the type of instruction it will recieve
+    output logic       WB_data_src, //! Where the Write Back data will come from (Res MUX)
+    //0: The value comes from the ALU.
+    //1: The value comes from the Data Memory.
+    output logic       reg_write  , //! RegFile register at the Write register input will be written with the value on the Write data input
+    output logic       mem_read   , //! Data Memory contents at the Adress input will be put on the Read data output
+    output logic       mem_write  , //! Data Memory contents at the Adress input will be replaced by the value on the Write data input
+    output logic [1:0] ALU_op     , //! Signals the ALU Controller the type of instruction it will recieve
     //00: Load/Store
     //01: Control Transfer
     //10: Integer Computational
-    output logic       Branch    //! Signal to the Branch Unit (Trough ID/EX)
+    output logic       branch       //! Signal to the branch Unit (Trough ID/EX) the current instruction is a branch
 );
 
     // Integer Computational Instructions
@@ -31,13 +31,13 @@ module Controller (
     logic [6:0] LOAD  = 7'b0000011; //! Load Instruction (I-Type)
     logic [6:0] STORE = 7'b0100011; //! Store Instruction (S-Type)
 
-    assign ALUSrc   = (Opcode == LOAD || Opcode == STORE);
-    assign MemtoReg = (Opcode == LOAD);
-    assign RegWrite = (Opcode == OP || Opcode == LOAD);
-    assign MemRead  = (Opcode == LOAD);
-    assign MemWrite = (Opcode == STORE);
-    assign ALUOp[0] = (Opcode == BRANCH);
-    assign ALUOp[1] = (Opcode == OP);
-    assign Branch   = (Opcode == BRANCH);
+    assign ALU_src     = (opcode == LOAD || opcode == STORE);
+    assign WB_data_src = (opcode == LOAD);
+    assign reg_write   = (opcode == OP || opcode == LOAD);
+    assign mem_read    = (opcode == LOAD);
+    assign mem_write   = (opcode == STORE);
+    assign ALU_op[0]   = (opcode == BRANCH);
+    assign ALU_op[1]   = (opcode == OP);
+    assign branch      = (opcode == BRANCH);
 
 endmodule
