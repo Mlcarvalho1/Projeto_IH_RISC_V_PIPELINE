@@ -19,6 +19,7 @@ module ALUController (
             2'b01: // Control Transfer (Branches)
                 case(Funct3)
                     3'b000: Operation = 4'b1000; // BEQ -> SUB
+                    3'b001: Operation = 4'b0011; // BNE
                     default: begin
                         $display("ALU_CONTROL_NOT_SPECIFIED\n");
                     end
@@ -26,11 +27,12 @@ module ALUController (
 
             2'b10: // Integer Computational (RType)
                 case (Funct3)
-                    3'b 000:
+                    3'b000:
                         case (Funct7)
                             7'b0000000: Operation = 4'b0010; // ADD
                             7'b0100000: Operation = 4'b0001; // SUB
                         endcase
+                    3'b110: Operation = 4'b0100; // OR
                     3'b111: Operation = 4'b0000; // AND
                 endcase
             default: begin

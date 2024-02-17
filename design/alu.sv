@@ -21,6 +21,10 @@ module alu #(
                     ALUResult = (SrcA == SrcB) ? 1 : 0;
                 4'b0001 : // SUB
                     ALUResult = $signed(SrcA) - $signed(SrcB);
+                4'b0011: // BNE 
+                    ALUResult = (SrcA == SrcB) ? 0 : 1;
+                4'b0100: // OR
+                    ALUResult = SrcA | SrcB;
                 default :
                     ALUResult = 0;
             endcase
