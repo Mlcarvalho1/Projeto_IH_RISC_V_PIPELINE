@@ -25,6 +25,8 @@ module alu #(
                     ALUResult = (SrcA == SrcB) ? 0 : 1;
                 4'b0100: // OR
                     ALUResult = SrcA | SrcB;
+                4'b0101: // XOR
+                    ALUResult = SrcA ^ SrcB;
                 default :
                     ALUResult = 0;
             endcase

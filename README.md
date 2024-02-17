@@ -37,8 +37,8 @@ Seu objetivo é implementar as instruções restantes listadas abaixo:
 | 15 | `SRAI`    |      ❌     |    ❌    |      ❌      |
 | 16 | `SUB`     |      ✅     |    ✅    |      ✅      |
 | 17 | `SLT`     |      ❌     |    ❌    |      ❌      |
-| 18 | `XOR`     |      ❌     |    ❌    |      ❌      |
-| 19 | `OR`      |      ❌     |    ❌    |      ❌      |
+| 18 | `XOR`     |      ✅     |    ✅    |      ✅      |
+| 19 | `OR`      |      ✅     |    ✅    |      ✅      |
 | 20 | `LUI`     |      ❌     |    ❌    |      ❌      |
 | 21 | `HALT`    |      ❌     |    ❌    |      ❌      |
 
