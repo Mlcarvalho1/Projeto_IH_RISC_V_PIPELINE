@@ -18,7 +18,7 @@ module Datapath #(
     ALUsrc,
     MemWrite,  // Register file or Immediate MUX // Memroy Writing Enable
     MemRead,  // Memroy Reading Enable
-    Branch,  // Branch Enable
+    Branch,  // PC MUX Selector / Reg A flush signal
     input  logic [           1:0] ALUOp        ,
     input  logic [  ALU_CC_W-1:0] ALU_CC       , // ALU Control Code ( input of the ALU )
     output logic [           6:0] opcode       ,
@@ -26,6 +26,7 @@ module Datapath #(
     output logic [           2:0] Funct3       ,
     output logic [           1:0] ALUOp_Current,
     output logic [    DATA_W-1:0] WB_Data      , //Result After the last MUX
+    output logic                  branch_comp  ,
     // Para depuração no tesbench:
     output logic [           4:0] reg_num      , //número do registrador que foi escrito
     output logic [    DATA_W-1:0] reg_data     , //valor que foi escrito no registrador
@@ -42,9 +43,8 @@ module Datapath #(
     logic [DATA_W-1:0] Reg1, Reg2;
     logic [DATA_W-1:0] ReadData    ;
     logic [DATA_W-1:0] SrcB, ALUResult;
-    logic [DATA_W-1:0] ExtImm, BrImm, Old_PC_Four, BrPC;
+    logic [DATA_W-1:0] ExtImm, BrImm, Old_PC_Four, PCPlusImm;
     logic [DATA_W-1:0] WrmuxSrc    ;
-    logic              PcSel       ; // mux select / flush signal
     logic [       1:0] FAmuxSel    ;
     logic [       1:0] FBmuxSel    ;
     logic [DATA_W-1:0] FAmux_Result;
@@ -57,15 +57,17 @@ module Datapath #(
     mem_wb_reg D;
 
     // next PC
-    adder #(9) pcadd (
+    adder #(9) pc_add_4 (
         PC,
         9'b100,
         PCPlus4
     );
+
+
     mux2 #(9) pcmux (
         PCPlus4,
-        BrPC[PC_W-1:0],
-        PcSel,
+        PCPlusImm,
+        Branch,
         Next_PC
     );
     flopr #(9) pcreg (
@@ -83,7 +85,7 @@ module Datapath #(
 
     // IF_ID_Reg A;
     always @(posedge clk) begin
-        if ((reset) || (PcSel))   // initialization or flush
+        if ((reset) || (Branch))   // initialization or flush
             begin
                 A.Curr_Pc    <= 0;
                 A.Curr_Instr <= 0;
@@ -129,11 +131,22 @@ module Datapath #(
         ExtImm
     );
 
+    adder #(9) pc_add_imm (
+        A.Curr_Pc,
+        ExtImm,
+        PCPlusImm
+    );
 
+    comparator #(9) br_cmp (
+        Reg1,
+        Reg2,
+        A.Curr_Instr[14:12],
+        branch_comp
+    );
 
     // ID_EX_Reg B;
     always @(posedge clk) begin
-        if ((reset) || (Reg_Stall) || (PcSel))   // initialization or flush or generate a NOP if hazard
+        if ((reset) || (Reg_Stall))   // initialization or flush or generate a NOP if hazard
             begin
                 B.ALUSrc     <= 0;
                 B.MemtoReg   <= 0;
@@ -141,7 +154,6 @@ module Datapath #(
                 B.MemRead    <= 0;
                 B.MemWrite   <= 0;
                 B.ALUOp      <= 0;
-                B.Branch     <= 0;
                 B.Curr_Pc    <= 0;
                 B.RD_One     <= 0;
                 B.RD_Two     <= 0;
@@ -159,7 +171,6 @@ module Datapath #(
             B.MemRead    <= MemRead;
             B.MemWrite   <= MemWrite;
             B.ALUOp      <= ALUOp;
-            B.Branch     <= Branch;
             B.Curr_Pc    <= A.Curr_Pc;
             B.RD_One     <= Reg1;
             B.RD_Two     <= Reg2;
@@ -217,16 +228,6 @@ module Datapath #(
         SrcB,
         ALU_CC,
         ALUResult
-    );
-    BranchUnit #(9) brunit (
-        B.Curr_Pc,
-        B.ImmG,
-        B.Branch,
-        ALUResult,
-        BrImm,
-        Old_PC_Four,
-        BrPC,
-        PcSel
     );
 
     // EX_MEM_Reg C;

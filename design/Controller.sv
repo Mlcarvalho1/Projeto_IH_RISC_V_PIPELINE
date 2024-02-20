@@ -3,6 +3,7 @@
 module Controller (
     //Input
     input  logic [6:0] opcode     , //! 7-bit opcode field from the instruction
+    input  logic       branch_comp,
     //Outputs
     output logic       ALU_src    , //! Signals Src Mux where the second ALU operand will come from
     //0: The operand comes from the ID/EX Register (Read Data 2);
@@ -17,7 +18,7 @@ module Controller (
     //00: Load/Store
     //01: Control Transfer
     //10: Integer Computational
-    output logic       branch       //! Signal to the branch Unit (Trough ID/EX) the current instruction is a branch
+    output logic       branch       //! Signal to PC MUX
 );
 
     // Integer Computational Instructions
@@ -38,6 +39,6 @@ module Controller (
     assign mem_write   = (opcode == STORE);
     assign ALU_op[0]   = (opcode == BRANCH);
     assign ALU_op[1]   = (opcode == OP);
-    assign branch      = (opcode == BRANCH);
+    assign pc_sel      = (opcode == BRANCH && branch_comp);
 
 endmodule
