@@ -20,6 +20,8 @@ module ALUController (
                 case(Funct3)
                     3'b000: Operation = 4'b1000; // BEQ -> SUB
                     3'b001: Operation = 4'b0011; // BNE
+                    3'b100: Operation = 4'b0111; // BLT
+                    3'b101: Operation = 4'b0110; // BGE
                     default: begin
                         $display("ALU_CONTROL_NOT_SPECIFIED\n");
                     end
