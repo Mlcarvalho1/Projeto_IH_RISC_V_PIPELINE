@@ -40,13 +40,14 @@ module Controller (
 
 
     always_comb begin
-        ALU_src     = (opcode == LOAD || opcode == STORE);
+        ALU_src     = (opcode == LOAD || opcode == STORE || opcode == JALR);
         WB_data_src = (opcode == LOAD);
-        reg_write   = (opcode == OP || opcode == OP_IMM || opcode == LOAD);
+        reg_write   = (opcode == LOAD || opcode == OP || opcode == OP_IMM || opcode == JALR);
         mem_read    = (opcode == LOAD);
         mem_write   = (opcode == STORE);
-        ALU_op[0]   = (opcode == OP || opcode == OP_IMM);
-        ALU_op[1]   = (opcode == BRANCH);
+
+        ALU_op[0] = (opcode == OP || opcode == OP_IMM || opcode == JALR);
+        ALU_op[1] = (opcode == BRANCH);
 
         case (opcode)
             JALR    : ctrl_transfer = 2'b11;

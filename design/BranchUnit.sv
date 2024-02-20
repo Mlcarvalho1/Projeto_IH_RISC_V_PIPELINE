@@ -9,8 +9,6 @@ module BranchUnit #(parameter PC_W = 9) (
     //10: JAL
     //11: JALR
     input  logic [    31:0] ALU_result   , //! Result from ALU comparison
-    output logic [    31:0] out          , //! No longer in use
-    output logic [    31:0] next_PC_four , //! PC+4
     output logic [    31:0] branch_PC    , //! PC  depending on control transfer type
     output logic            PC_sel         //! Signal to PC Mux wether branch will be taken
     //0: PC = PC+4
