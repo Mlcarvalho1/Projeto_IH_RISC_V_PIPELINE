@@ -9,7 +9,6 @@ module alu #(
     input  logic [OPCODE_LENGTH-1:0] Operation,
     output logic [   DATA_WIDTH-1:0] ALUResult
 );
-
     always_comb
         begin
             case(Operation)
@@ -18,7 +17,7 @@ module alu #(
                 4'b0001 : // SUB
                     ALUResult = $signed(SrcA) - $signed(SrcB);
                 4'b0010 : // ADD
-                    ALUResult = $signed(SrcA) + $signed(SrcB);
+                        ALUResult = $signed(SrcA) + $signed(SrcB);
                 4'b0011: // BNE 
                     ALUResult = (SrcA == SrcB) ? 0 : 1;
                 4'b0100: // OR
@@ -26,7 +25,7 @@ module alu #(
                 4'b0101: // XOR
                     ALUResult = SrcA ^ SrcB;
                 4'b0110: // BGE
-                    ALUResult = SrcA > SrcB ? 1 : 0;
+                    ALUResult = SrcA < SrcB ? 0 : 1;
                 4'b0111: // BLT
                     ALUResult = SrcA < SrcB ? 1 : 0;
                 4'b1000 : // Equal
