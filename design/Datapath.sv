@@ -94,10 +94,31 @@ module Datapath #(
             end
     end
 
+    logic [ 2:0] dc_opcode;
+    logic [ 4:0] dc_rd    ;
+    logic [ 4:0] dc_rs1   ;
+    logic [ 4:0] dc_rs2   ;
+    logic [ 2:0] dc_funct3;
+    logic [ 6:0] dc_funct7;
+    logic [31:0] dc_imm   ;
+
+    decoder decode (
+        A.Curr_Instr,
+        dc_opcode,
+        dc_rd    ,
+        dc_rs1   ,
+        dc_rs2   ,
+        dc_funct3,
+        dc_funct7,
+        dc_imm
+    );
+
+    assign opcode = dc_opcode;
+
     //--// The Hazard Detection Unit
     HazardDetection detect (
-        A.Curr_Instr[19:15],
-        A.Curr_Instr[24:20],
+        dc_rs1,
+        dc_rs2,
         B.rd,
         B.MemRead,
         Reg_Stall
@@ -111,8 +132,8 @@ module Datapath #(
         reset,
         D.RegWrite,
         D.rd,
-        A.Curr_Instr[19:15],
-        A.Curr_Instr[24:20],
+        dc_rs1,
+        dc_rs2,
         WrmuxSrc,
         Reg1,
         Reg2
@@ -121,12 +142,6 @@ module Datapath #(
     assign reg_num       = D.rd;
     assign reg_data      = WrmuxSrc;
     assign reg_write_sig = D.RegWrite;
-
-    // //sign extend
-    imm_Gen Ext_Imm (
-        A.Curr_Instr,
-        ExtImm
-    );
 
     // ID_EX_Reg B;
     always @(posedge clk) begin
@@ -160,12 +175,12 @@ module Datapath #(
             B.Curr_Pc    <= A.Curr_Pc;
             B.RD_One     <= Reg1;
             B.RD_Two     <= Reg2;
-            B.RS_One     <= A.Curr_Instr[19:15];
-            B.RS_Two     <= A.Curr_Instr[24:20];
-            B.rd         <= A.Curr_Instr[11:7];
-            B.ImmG       <= ExtImm;
-            B.func3      <= A.Curr_Instr[14:12];
-            B.func7      <= A.Curr_Instr[31:25];
+            B.RS_One     <= dc_rs1;
+            B.RS_Two     <= dc_rs2;
+            B.rd         <= dc_rd;
+            B.ImmG       <= dc_imm;
+            B.func3      <= dc_funct3;
+            B.func7      <= dc_funct7;
             B.Curr_Instr <= A.Curr_Instr;  //debug tmp
         end
     end
