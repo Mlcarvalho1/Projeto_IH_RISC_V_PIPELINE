@@ -11,13 +11,13 @@ module Datapath #(
     parameter ALU_CC_W   = 4   // ALU Control Code Width
 ) (
     input  logic                  clk          ,
-    reset,
-    RegWrite,
-    MemtoReg,  // Register file writing enable   // Memory or ALU MUX
-    ALUsrc,
-    MemWrite,  // Register file or Immediate MUX // Memroy Writing Enable
-    MemRead,  // Memroy Reading Enable
-    Branch,  // Branch Enable
+    input  logic                  reset        ,
+    input  logic                  RegWrite     , // Register file writing enable
+    input  logic [           1:0] MemtoReg     , // Memory or ALU or JAL MUX
+    input  logic                  ALUsrc       ,
+    input  logic                  MemWrite     , // Register file or Immediate MUX // Memroy Writing Enable
+    input  logic                  MemRead      , // Memroy Reading Enable
+    input  logic [           1:0] ctrl_transfer,
     input  logic [           1:0] ALUOp        ,
     input  logic [  ALU_CC_W-1:0] ALU_CC       , // ALU Control Code ( input of the ALU )
     output logic [           6:0] opcode       ,
@@ -125,8 +125,6 @@ module Datapath #(
     );
 
     // //Register File
-    assign opcode = A.Curr_Instr[6:0];
-
     RegFile rf (
         clk,
         reset,
@@ -147,41 +145,41 @@ module Datapath #(
     always @(posedge clk) begin
         if ((reset) || (Reg_Stall) || (PcSel))   // initialization or flush or generate a NOP if hazard
             begin
-                B.ALUSrc     <= 0;
-                B.MemtoReg   <= 0;
-                B.RegWrite   <= 0;
-                B.MemRead    <= 0;
-                B.MemWrite   <= 0;
-                B.ALUOp      <= 0;
-                B.Branch     <= 0;
-                B.Curr_Pc    <= 0;
-                B.RD_One     <= 0;
-                B.RD_Two     <= 0;
-                B.RS_One     <= 0;
-                B.RS_Two     <= 0;
-                B.rd         <= 0;
-                B.ImmG       <= 0;
-                B.func3      <= 0;
-                B.func7      <= 0;
-                B.Curr_Instr <= A.Curr_Instr;  //debug tmp
+                B.ALUSrc        <= 0;
+                B.MemtoReg      <= 0;
+                B.RegWrite      <= 0;
+                B.MemRead       <= 0;
+                B.MemWrite      <= 0;
+                B.ALUOp         <= 0;
+                B.ctrl_transfer <= 0;
+                B.Curr_Pc       <= 0;
+                B.RD_One        <= 0;
+                B.RD_Two        <= 0;
+                B.RS_One        <= 0;
+                B.RS_Two        <= 0;
+                B.rd            <= 0;
+                B.ImmG          <= 0;
+                B.func3         <= 0;
+                B.func7         <= 0;
+                B.Curr_Instr    <= A.Curr_Instr;  //debug tmp
             end else begin
-            B.ALUSrc     <= ALUsrc;
-            B.MemtoReg   <= MemtoReg;
-            B.RegWrite   <= RegWrite;
-            B.MemRead    <= MemRead;
-            B.MemWrite   <= MemWrite;
-            B.ALUOp      <= ALUOp;
-            B.Branch     <= Branch;
-            B.Curr_Pc    <= A.Curr_Pc;
-            B.RD_One     <= Reg1;
-            B.RD_Two     <= Reg2;
-            B.RS_One     <= dc_rs1;
-            B.RS_Two     <= dc_rs2;
-            B.rd         <= dc_rd;
-            B.ImmG       <= dc_imm;
-            B.func3      <= dc_funct3;
-            B.func7      <= dc_funct7;
-            B.Curr_Instr <= A.Curr_Instr;  //debug tmp
+            B.ALUSrc        <= ALUsrc;
+            B.MemtoReg      <= MemtoReg;
+            B.RegWrite      <= RegWrite;
+            B.MemRead       <= MemRead;
+            B.MemWrite      <= MemWrite;
+            B.ALUOp         <= ALUOp;
+            B.ctrl_transfer <= ctrl_transfer;
+            B.Curr_Pc       <= A.Curr_Pc;
+            B.RD_One        <= Reg1;
+            B.RD_Two        <= Reg2;
+            B.RS_One        <= dc_rs1;
+            B.RS_Two        <= dc_rs2;
+            B.rd            <= dc_rd;
+            B.ImmG          <= dc_imm;
+            B.func3         <= dc_funct3;
+            B.func7         <= dc_funct7;
+            B.Curr_Instr    <= A.Curr_Instr;  //debug tmp
         end
     end
 
@@ -233,9 +231,9 @@ module Datapath #(
     BranchUnit #(9) brunit (
         B.Curr_Pc,
         B.ImmG,
-        B.Branch,
+        B.ctrl_transfer,
+        1'b0, // Halt ainda não implementado
         ALUResult,
-        BrImm,
         BrPC,
         PcSel
     );
@@ -304,9 +302,12 @@ module Datapath #(
     end
 
     //--// The LAST Block
-    mux2 #(32) resmux (
-        D.Alu_Result,
+
+    mux4 #(32) wbmux (
         D.MemReadData,
+        D.Alu_Result,
+        32'b0,
+        32'b0,
         D.MemtoReg,
         WrmuxSrc
     );

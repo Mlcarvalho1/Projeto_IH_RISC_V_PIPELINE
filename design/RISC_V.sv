@@ -14,13 +14,18 @@ module riscv #(parameter DATA_W = 32) (
     output logic [DATA_W-1:0] rd_data
 );
 
-    logic [6:0] opcode   ;
-    logic       ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch;
-    logic [1:0] ALUop    ;
-    logic [1:0] ALUop_Reg;
-    logic [6:0] Funct7   ;
-    logic [2:0] Funct3   ;
-    logic [3:0] Operation;
+    logic [6:0] opcode       ;
+    logic       ALUSrc       ;
+    logic [1:0] MemtoReg     ;
+    logic       RegWrite     ;
+    logic       MemRead      ;
+    logic       MemWrite     ;
+    logic [1:0] ALUop        ;
+    logic [1:0] ctrl_transfer;
+    logic [1:0] ALUop_Reg    ;
+    logic [6:0] Funct7       ;
+    logic [2:0] Funct3       ;
+    logic [3:0] Operation    ;
 
     Controller c (
         opcode,
@@ -30,7 +35,7 @@ module riscv #(parameter DATA_W = 32) (
         MemRead,
         MemWrite,
         ALUop,
-        Branch
+        ctrl_transfer
     );
 
     ALUController ac (
@@ -48,7 +53,7 @@ module riscv #(parameter DATA_W = 32) (
         ALUSrc,
         MemWrite,
         MemRead,
-        Branch,
+        ctrl_transfer,
         ALUop,
         Operation,
         opcode,

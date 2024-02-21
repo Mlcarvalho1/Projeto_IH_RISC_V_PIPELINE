@@ -21,7 +21,7 @@ add wave -position end sim:/tb_top/riscV/MemtoReg
 add wave -position end sim:/tb_top/riscV/RegWrite
 add wave -position end sim:/tb_top/riscV/MemRead
 add wave -position end sim:/tb_top/riscV/MemWrite
-add wave -position end sim:/tb_top/riscV/Branch
+add wave -position end sim:/tb_top/riscV/ctrl_transfer
 add wave -position end sim:/tb_top/riscV/ALUop
 add wave -position end sim:/tb_top/riscV/ALUop_Reg
 add wave -position end sim:/tb_top/riscV/Funct7
