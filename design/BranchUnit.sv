@@ -7,6 +7,7 @@ module BranchUnit #(parameter WIDTH = 9) (
     input  logic             halt         ,
     input  logic [     31:0] ALU_result   , //! Result from ALU comparison
     output logic [     31:0] branch_pc    , //! pc  depending on control transfer type
+    output logic [     31:0] pc_plus_4    ,
     output logic             pc_sel         //! Signal to pc Mux wether branch will be taken
     //0: pc = pc+4
     //1: pc = branch_pc
@@ -20,6 +21,8 @@ module BranchUnit #(parameter WIDTH = 9) (
     localparam BRANCH  = 2'b11;
 
     always_comb begin
+        pc_plus_4 = pc_32 + 32'd4;
+
         if (halt) begin
             pc_sel    = 1;
             branch_pc = 32'hFFFFFFFF;

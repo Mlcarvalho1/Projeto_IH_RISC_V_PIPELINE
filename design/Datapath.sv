@@ -228,6 +228,9 @@ module Datapath #(
         ALU_CC,
         ALUResult
     );
+
+    logic [31:0] br_pc_plus_4;
+
     BranchUnit #(9) brunit (
         B.Curr_Pc,
         B.ImmG,
@@ -235,6 +238,7 @@ module Datapath #(
         1'b0, // Halt ainda não implementado
         ALUResult,
         BrPC,
+        br_pc_plus_4,
         PcSel
     );
 
@@ -246,6 +250,7 @@ module Datapath #(
                 C.MemtoReg   <= 0;
                 C.MemRead    <= 0;
                 C.MemWrite   <= 0;
+                C.pc_plus_4  <= 0;
                 C.Alu_Result <= 0;
                 C.RD_Two     <= 0;
                 C.rd         <= 0;
@@ -256,6 +261,7 @@ module Datapath #(
             C.MemtoReg   <= B.MemtoReg;
             C.MemRead    <= B.MemRead;
             C.MemWrite   <= B.MemWrite;
+            C.pc_plus_4  <= br_pc_plus_4;
             C.Alu_Result <= ALUResult;
             C.RD_Two     <= FBmux_Result;
             C.rd         <= B.rd;
@@ -288,12 +294,14 @@ module Datapath #(
             begin
                 D.RegWrite    <= 0;
                 D.MemtoReg    <= 0;
+                D.pc_plus_4   <= 0;
                 D.Alu_Result  <= 0;
                 D.MemReadData <= 0;
                 D.rd          <= 0;
             end else begin
             D.RegWrite    <= C.RegWrite;
             D.MemtoReg    <= C.MemtoReg;
+            D.pc_plus_4   <= C.pc_plus_4;
             D.Alu_Result  <= C.Alu_Result;
             D.MemReadData <= ReadData;
             D.rd          <= C.rd;
@@ -304,9 +312,9 @@ module Datapath #(
     //--// The LAST Block
 
     mux4 #(32) wbmux (
-        D.MemReadData,
         D.Alu_Result,
-        32'b0,
+        D.MemReadData,
+        D.pc_plus_4,
         32'b0,
         D.MemtoReg,
         WrmuxSrc

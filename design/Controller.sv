@@ -8,8 +8,8 @@ module Controller (
     //0: The operand comes from the ID/EX Register (Read Data 2);
     //1: The operand comes from Imm_Gen (the immediate offset for Load/Store Instructions)
     output logic [1:0] wb_data_src  , //! Where the Write Back data will come from (Res MUX)
-    //00: The value comes from the Data Memory.
-    //01: The value comes from the ALU.
+    //00: The value comes from the ALU.
+    //01: The value comes from the Data Memory.
     //10: The value comes from PC+4
     //11: ----
     output logic       reg_write    , //! RegFile register at the Write register input will be written with the value on the Write data input
