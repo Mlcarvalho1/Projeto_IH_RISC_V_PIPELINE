@@ -1,22 +1,21 @@
-    /design/adder.sv
-    /design/ramOnChip32.v
-    /design/ramOnChipData.v
-    /design/Memoria32.sv
-    /design/Memoria32Data.sv
-    /design/RegPack.sv
-    /design/RegFile.sv
-    /design/alu.sv
-    /design/ALUController.sv
-    /design/BranchUnit.sv
-    /design/Controller.sv
-    /design/flopr.sv
-    /design/ForwardingUnit.sv
-    /design/HazardDetection.sv
-    /design/imm_Gen.sv
-    /design/mux2.sv
-    /design/mux4.sv
-    /design/datamemory.sv
-    /design/instructionmemory.sv
-    /design/Datapath.sv
-    /design/RISC_V.sv
-    /verif/tb_top.sv
+/home/chances/Documents/Projeto-RiscV/design/ramOnChip32.v
+/home/chances/Documents/Projeto-RiscV/design/ramOnChipData.v
+/home/chances/Documents/Projeto-RiscV/design/ALUController.sv
+/home/chances/Documents/Projeto-RiscV/design/BranchUnit.sv
+/home/chances/Documents/Projeto-RiscV/design/Controller.sv
+/home/chances/Documents/Projeto-RiscV/design/ForwardingUnit.sv
+/home/chances/Documents/Projeto-RiscV/design/HazardDetection.sv
+/home/chances/Documents/Projeto-RiscV/design/Memoria32.sv
+/home/chances/Documents/Projeto-RiscV/design/Memoria32Data.sv
+/home/chances/Documents/Projeto-RiscV/design/RISC_V.sv
+/home/chances/Documents/Projeto-RiscV/design/RegFile.sv
+/home/chances/Documents/Projeto-RiscV/design/adder.sv
+/home/chances/Documents/Projeto-RiscV/design/alu.sv
+/home/chances/Documents/Projeto-RiscV/design/datamemory.sv
+/home/chances/Documents/Projeto-RiscV/design/decoder.sv
+/home/chances/Documents/Projeto-RiscV/design/instructionmemory.sv
+/home/chances/Documents/Projeto-RiscV/design/mux2.sv
+/home/chances/Documents/Projeto-RiscV/design/mux4.sv
+/home/chances/Documents/Projeto-RiscV/verif/tb_top.sv
+/home/chances/Documents/Projeto-RiscV/design/RegPack.sv
+/home/chances/Documents/Projeto-RiscV/design/Datapath.sv

@@ -1,13 +1,13 @@
 module decoder (
-    input  logic [31:0] instr ,
-    output logic [ 2:0] opcode,
-    output logic [ 4:0] rd    ,
-    output logic [ 4:0] rs1   ,
-    output logic [ 4:0] rs2   ,
-    output logic [ 2:0] funct3,
-    output logic [ 6:0] funct7,
-    output logic [31:0] imm
-);
+        input  logic [31:0] instr ,
+        output logic [ 6:0] opcode,
+        output logic [ 4:0] rd    ,
+        output logic [ 4:0] rs1   ,
+        output logic [ 4:0] rs2   ,
+        output logic [ 2:0] funct3,
+        output logic [ 6:0] funct7,
+        output logic [31:0] imm
+    );
 
     localparam OP     = 7'b0110011; //! (R-Type) Integer Register-Register Instructions
     localparam OP_IMM = 7'b0010011; //! (I-Type) Integer Register-Immediate Instructions

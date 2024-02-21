@@ -3,323 +3,345 @@
 import Pipe_Buf_Reg_PKG::*;
 
 module Datapath #(
-    parameter PC_W       = 9 , // Program Counter
-    parameter INS_W      = 32, // Instruction Width
-    parameter RF_ADDRESS = 5 , // Register File Address
-    parameter DATA_W     = 32, // Data WriteData
-    parameter DM_ADDRESS = 9 , // Data Memory Address
-    parameter ALU_CC_W   = 4   // ALU Control Code Width
-) (
-    input  logic                  clk          ,
-    input  logic                  reset        ,
-    input  logic                  RegWrite     , // Register file writing enable
-    input  logic [           1:0] MemtoReg     , // Memory or ALU or JAL MUX
-    input  logic                  ALUsrc       ,
-    input  logic                  MemWrite     , // Register file or Immediate MUX // Memroy Writing Enable
-    input  logic                  MemRead      , // Memroy Reading Enable
-    input  logic [           1:0] ctrl_transfer,
-    input  logic [           1:0] ALUOp        ,
-    input  logic [  ALU_CC_W-1:0] ALU_CC       , // ALU Control Code ( input of the ALU )
-    output logic [           6:0] opcode       ,
-    output logic [           6:0] Funct7       ,
-    output logic [           2:0] Funct3       ,
-    output logic [           1:0] ALUOp_Current,
-    output logic [    DATA_W-1:0] WB_Data      , //Result After the last MUX
-    // Para depuração no tesbench:
-    output logic [           4:0] reg_num      , //número do registrador que foi escrito
-    output logic [    DATA_W-1:0] reg_data     , //valor que foi escrito no registrador
-    output logic                  reg_write_sig, //sinal de escrita no registrador
-    output logic                  wr           , // write enable
-    output logic                  reade        , // read enable
-    output logic [DM_ADDRESS-1:0] addr         , // address
-    output logic [    DATA_W-1:0] wr_data      , // write data
-    output logic [    DATA_W-1:0] rd_data        // read data
-);
+        parameter PC_W       = 9 , // Program Counter
+        parameter INS_W      = 32, // Instruction Width
+        parameter DATA_W     = 32, // Data WriteData
+        parameter DM_ADDRESS = 9 , // Data Memory Address
+        parameter ALU_CC_W   = 4   // ALU Control Code Width
+    ) (
+        input  logic                clk ,
+        input  logic                reset ,
+        input  logic                in_RegWrite ,     // Register file writing enable
+        input  logic [1:0]          in_MemtoReg ,     // Memory or ALU or JAL MUX
+        input  logic                in_ALUsrc ,
+        input  logic                in_MemWrite ,     // Register file or Immediate MUX // Memroy Writing Enable
+        input  logic                in_MemRead ,      // Memroy Reading Enable
+        input  logic [1:0]          ctrl_transfer,
+        input  logic [1:0]          in_ALUOp ,
+        input  logic [ALU_CC_W-1:0] in_ALU_CC ,       // ALU Control Code ( input of the ALU )
+        output logic [6:0]          out_opcode ,
+        output logic [6:0]          out_Funct7 ,
+        output logic [2:0]          out_Funct3 ,
+        output logic [1:0]          out_ALUOp_Current,
 
-    logic [  PC_W-1:0] PC, PCPlus4, Next_PC;
-    logic [ INS_W-1:0] Instr       ;
-    logic [DATA_W-1:0] Reg1, Reg2;
-    logic [DATA_W-1:0] ReadData    ;
-    logic [DATA_W-1:0] SrcB, ALUResult;
-    logic [DATA_W-1:0] ExtImm, BrImm, Old_PC_Four, BrPC;
-    logic [DATA_W-1:0] WrmuxSrc    ;
-    logic              PcSel       ; // mux select / flush signal
-    logic [       1:0] FAmuxSel    ;
-    logic [       1:0] FBmuxSel    ;
-    logic [DATA_W-1:0] FAmux_Result;
-    logic [DATA_W-1:0] FBmux_Result;
-    logic              Reg_Stall   ; //1: PC fetch same, Register not update
+        // Para depuração no tesbench:
+        output logic [PC_W-1:0]       tb_PC,
+        output logic [4:0]            tb_reg_addr ,       //número do registrador que foi escrito
+        output logic [DATA_W-1:0]     tb_reg_wr_data ,    //valor que foi escrito no registrador
+        output logic                  tb_reg_write,       //sinal de escrita no registrador
+        output logic                  tb_mem_write ,      // write enable
+        output logic                  tb_mem_read ,       // read enable
+        output logic [DM_ADDRESS-1:0] tb_mem_addr ,       // address
+        output logic [DATA_W-1:0]     tb_mem_write_data , // write data
+        output logic [DATA_W-1:0]     tb_mem_read_data    // read data
+    );
 
-    if_id_reg  A;
-    id_ex_reg  B;
-    ex_mem_reg C;
-    mem_wb_reg D;
+
+    logic [PC_W-1:0] pcreg_PC;
+    logic [PC_W-1:0] pcadd_PC_plus_4;
+
+    assign tb_PC = pcreg_PC;
 
     // next PC
     adder #(9) pcadd (
-        PC,
+        pcreg_PC,
         9'b100,
-        PCPlus4
+        pcadd_PC_plus_4
     );
+
+    logic            bru_pc_src ;  // mux select / flush signal
+    logic [PC_W-1:0] pcmux_next_PC;
+
     mux2 #(9) pcmux (
-        PCPlus4,
-        BrPC[PC_W-1:0],
-        PcSel,
-        Next_PC
+        pcadd_PC_plus_4,
+        bru_PC_result   [PC_W-1:0],
+        bru_pc_src,
+        pcmux_next_PC
     );
-    flopr #(9) pcreg (
+
+    logic hdu_stall ; //1: PC fetch same, Register not update
+
+    PC_ff #(9) pcreg (
         clk,
         reset,
-        Next_PC,
-        Reg_Stall,
-        PC
-    );
-    instructionmemory instr_mem (
-        clk,
-        PC,
-        Instr
+        pcmux_next_PC,
+        hdu_stall,
+        pcreg_PC
     );
 
-    // IF_ID_Reg A;
-    always @(posedge clk) begin
-        if ((reset) || (PcSel))   // initialization or flush
-            begin
-                A.Curr_Pc    <= 0;
-                A.Curr_Instr <= 0;
-            end
-        else if (!Reg_Stall)    // stall
-            begin
-                A.Curr_Pc    <= PC;
-                A.Curr_Instr <= Instr;
-            end
+    PC_reg PC;
+    always_ff @(posedge clk) begin
+        if (reset) PC.next_PC           <= 0;
+        else if (!hdu_stall) PC.next_PC <= pcmux_next_PC;
     end
 
-    logic [ 2:0] dc_opcode;
-    logic [ 4:0] dc_rd    ;
-    logic [ 4:0] dc_rs1   ;
-    logic [ 4:0] dc_rs2   ;
-    logic [ 2:0] dc_funct3;
-    logic [ 6:0] dc_funct7;
-    logic [31:0] dc_imm   ;
+    logic [INS_W-1:0] i_mem_instr ;
 
-    decoder decode (
-        A.Curr_Instr,
+    instructionmemory i_mem (
+        clk,
+        pcreg_PC,
+        i_mem_instr
+    );
+
+
+    if_id_reg A;
+    always @(posedge clk) begin
+        if ((reset) || (bru_pc_src)) begin // initialization or flush
+            A.current_PC    <= 0;
+            A.current_instr <= 0;
+        end
+        else if (!hdu_stall) begin // stall
+            A.current_PC    <= pcreg_PC;
+            A.current_instr <= i_mem_instr;
+        end
+    end
+
+    logic [6:0]  dc_opcode;
+    logic [4:0]  dc_rd ;
+    logic [4:0]  dc_rs1 ;
+    logic [4:0]  dc_rs2 ;
+    logic [2:0]  dc_funct3;
+    logic [6:0]  dc_funct7;
+    logic [31:0] dc_imm ;
+
+    decoder dc (
+        A.current_instr,
         dc_opcode,
-        dc_rd    ,
-        dc_rs1   ,
-        dc_rs2   ,
+        dc_rd ,
+        dc_rs1 ,
+        dc_rs2 ,
         dc_funct3,
         dc_funct7,
         dc_imm
     );
 
-    assign opcode = dc_opcode;
+    assign out_opcode = dc_opcode;
 
-    //--// The Hazard Detection Unit
     HazardDetection detect (
         dc_rs1,
         dc_rs2,
         B.rd,
-        B.MemRead,
-        Reg_Stall
+        B.mem_read,
+        hdu_stall
     );
 
-    // //Register File
+    logic [DATA_W-1:0] wbmux_reg_wb_data ;
+    logic [DATA_W-1:0] rf_rs1, rf_rs2;
+
+
     RegFile rf (
         clk,
         reset,
-        D.RegWrite,
+        D.reg_write,
         D.rd,
         dc_rs1,
         dc_rs2,
-        WrmuxSrc,
-        Reg1,
-        Reg2
+        wbmux_reg_wb_data,
+        rf_rs1,
+        rf_rs2
     );
 
-    assign reg_num       = D.rd;
-    assign reg_data      = WrmuxSrc;
-    assign reg_write_sig = D.RegWrite;
+    assign tb_reg_addr = D.rd;
+    assign tb_reg_wr_data = wbmux_reg_wb_data;
+    assign tb_reg_write = D.reg_write;
 
-    // ID_EX_Reg B;
+
+    id_ex_reg B;
     always @(posedge clk) begin
-        if ((reset) || (Reg_Stall) || (PcSel))   // initialization or flush or generate a NOP if hazard
-            begin
-                B.ALUSrc        <= 0;
-                B.MemtoReg      <= 0;
-                B.RegWrite      <= 0;
-                B.MemRead       <= 0;
-                B.MemWrite      <= 0;
-                B.ALUOp         <= 0;
-                B.ctrl_transfer <= 0;
-                B.Curr_Pc       <= 0;
-                B.RD_One        <= 0;
-                B.RD_Two        <= 0;
-                B.RS_One        <= 0;
-                B.RS_Two        <= 0;
-                B.rd            <= 0;
-                B.ImmG          <= 0;
-                B.func3         <= 0;
-                B.func7         <= 0;
-                B.Curr_Instr    <= A.Curr_Instr;  //debug tmp
-            end else begin
-            B.ALUSrc        <= ALUsrc;
-            B.MemtoReg      <= MemtoReg;
-            B.RegWrite      <= RegWrite;
-            B.MemRead       <= MemRead;
-            B.MemWrite      <= MemWrite;
-            B.ALUOp         <= ALUOp;
-            B.ctrl_transfer <= ctrl_transfer;
-            B.Curr_Pc       <= A.Curr_Pc;
-            B.RD_One        <= Reg1;
-            B.RD_Two        <= Reg2;
-            B.RS_One        <= dc_rs1;
-            B.RS_Two        <= dc_rs2;
-            B.rd            <= dc_rd;
-            B.ImmG          <= dc_imm;
-            B.func3         <= dc_funct3;
-            B.func7         <= dc_funct7;
-            B.Curr_Instr    <= A.Curr_Instr;  //debug tmp
+        if ((reset) || (hdu_stall) || (bru_pc_src)) begin // initialization or flush or generate a NOP if hazard
+            B.ALU_src          <= 0;
+            B.reg_wb_src       <= 0;
+            B.reg_write        <= 0;
+            B.mem_read         <= 0;
+            B.mem_write        <= 0;
+            B.ALU_op           <= 0;
+            B.branch_op        <= 0;
+            B.current_PC       <= 0;
+            B.rd1              <= 0;
+            B.rd2              <= 0;
+            B.rs1              <= 0;
+            B.rs2              <= 0;
+            B.rd               <= 0;
+            B.imm              <= 0;
+            B.funct3           <= 0;
+            B.funct7           <= 0;
+            B.tb_current_instr <= A.current_instr; //debug tmp
+        end
+        else begin
+            B.ALU_src          <= in_ALUsrc;
+            B.reg_wb_src       <= in_MemtoReg;
+            B.reg_write        <= in_RegWrite;
+            B.mem_read         <= in_MemRead;
+            B.mem_write        <= in_MemWrite;
+            B.ALU_op           <= in_ALUOp;
+            B.branch_op        <= ctrl_transfer;
+            B.current_PC       <= A.current_PC;
+            B.rd1              <= rf_rs1;
+            B.rd2              <= rf_rs2;
+            B.rs1              <= dc_rs1;
+            B.rs2              <= dc_rs2;
+            B.rd               <= dc_rd;
+            B.imm              <= dc_imm;
+            B.funct3           <= dc_funct3;
+            B.funct7           <= dc_funct7;
+            B.tb_current_instr <= A.current_instr; //debug tmp
         end
     end
 
-    //--// The Forwarding Unit
-    ForwardingUnit forunit (
-        B.RS_One,
-        B.RS_Two,
+    logic [1:0] fwu_mux_A_src ;
+    logic [1:0] fwu_mux_B_src ;
+
+    ForwardingUnit fwu (
+        B.rs1,
+        B.rs2,
         C.rd,
         D.rd,
-        C.RegWrite,
-        D.RegWrite,
-        FAmuxSel,
-        FBmuxSel
+        C.reg_write,
+        D.reg_write,
+        fwu_mux_A_src,
+        fwu_mux_B_src
     );
 
     // // //ALU
-    assign Funct7        = B.func7;
-    assign Funct3        = B.func3;
-    assign ALUOp_Current = B.ALUOp;
+    assign out_Funct7 = B.funct7;
+    assign out_Funct3 = B.funct3;
+    assign out_ALUOp_Current = B.ALU_op;
 
-    mux4 #(32) FAmux (
-        B.RD_One,
-        WrmuxSrc,
-        C.Alu_Result,
-        B.RD_One,
-        FAmuxSel,
-        FAmux_Result
-    );
-    mux4 #(32) FBmux (
-        B.RD_Two,
-        WrmuxSrc,
-        C.Alu_Result,
-        B.RD_Two,
-        FBmuxSel,
-        FBmux_Result
-    );
-    mux2 #(32) srcbmux (
-        FBmux_Result,
-        B.ImmG,
-        B.ALUSrc,
-        SrcB
-    );
-    alu alu_module (
-        FAmux_Result,
-        SrcB,
-        ALU_CC,
-        ALUResult
+    logic [DATA_W-1:0] fwu_mux_A_val;
+    logic [DATA_W-1:0] fwu_mux_B_val;
+
+    mux4 #(32) fwu_mux_A (
+        B.rd1,
+        wbmux_reg_wb_data,
+        C.ALU_result,
+        B.rd1,
+        fwu_mux_A_src,
+        fwu_mux_A_val
     );
 
-    logic [31:0] br_pc_plus_4;
+    mux4 #(32) fwu_mux_B (
+        B.rd2,
+        wbmux_reg_wb_data,
+        C.ALU_result,
+        B.rd2,
+        fwu_mux_B_src,
+        fwu_mux_B_val
+    );
 
-    BranchUnit #(9) brunit (
-        B.Curr_Pc,
-        B.ImmG,
-        B.ctrl_transfer,
+    logic [DATA_W-1:0] ALUsrcmux_B_val;
+
+    mux2 #(32) ALUsrcmux (
+        fwu_mux_B_val,
+        B.imm,
+        B.ALU_src,
+        ALUsrcmux_B_val
+    );
+
+    logic [DATA_W-1:0] ALU_result;
+
+    alu ALU (
+        fwu_mux_A_val,
+        ALUsrcmux_B_val,
+        in_ALU_CC,
+        ALU_result
+    );
+
+    logic [31:0]       bru_PC_plus_4;
+    logic [DATA_W-1:0] bru_PC_result;
+
+    BranchUnit #(9) bru (
+        B.current_PC,
+        B.imm,
+        B.branch_op,
         1'b0, // Halt ainda não implementado
-        ALUResult,
-        BrPC,
-        br_pc_plus_4,
-        PcSel
+        ALU_result,
+        bru_PC_result,
+        bru_PC_plus_4,
+        bru_pc_src
     );
 
-    // EX_MEM_Reg C;
+
+    ex_mem_reg C;
     always @(posedge clk) begin
-        if (reset)   // initialization
-            begin
-                C.RegWrite   <= 0;
-                C.MemtoReg   <= 0;
-                C.MemRead    <= 0;
-                C.MemWrite   <= 0;
-                C.pc_plus_4  <= 0;
-                C.Alu_Result <= 0;
-                C.RD_Two     <= 0;
-                C.rd         <= 0;
-                C.func3      <= 0;
-                C.func7      <= 0;
-            end else begin
-            C.RegWrite   <= B.RegWrite;
-            C.MemtoReg   <= B.MemtoReg;
-            C.MemRead    <= B.MemRead;
-            C.MemWrite   <= B.MemWrite;
-            C.pc_plus_4  <= br_pc_plus_4;
-            C.Alu_Result <= ALUResult;
-            C.RD_Two     <= FBmux_Result;
-            C.rd         <= B.rd;
-            C.func3      <= B.func3;
-            C.func7      <= B.func7;
-            C.Curr_Instr <= B.Curr_Instr;  // debug tmp
+        if (reset) begin // initialization
+            C.reg_write  <= 0;
+            C.reg_wb_src <= 0;
+            C.mem_read   <= 0;
+            C.mem_write  <= 0;
+            C.pc_plus_4  <= 0;
+            C.ALU_result <= 0;
+            C.rd2        <= 0;
+            C.rd         <= 0;
+            C.funct3     <= 0;
+            C.funct7     <= 0;
+        end
+        else begin
+            C.reg_write        <= B.reg_write;
+            C.reg_wb_src       <= B.reg_wb_src;
+            C.mem_read         <= B.mem_read;
+            C.mem_write        <= B.mem_write;
+            C.pc_plus_4        <= bru_PC_plus_4;
+            C.ALU_result       <= ALU_result;
+            C.rd2              <= fwu_mux_B_val;
+            C.rd               <= B.rd;
+            C.funct3           <= B.funct3;
+            C.funct7           <= B.funct7;
+            C.tb_current_instr <= B.tb_current_instr; // debug tmp
         end
     end
+
+    logic [DATA_W-1:0] mem_read_data;
+    logic [8:0]        RW_address    = C.ALU_result[8:0];
 
     // // // // Data memory
     datamemory data_mem (
         clk,
-        C.MemRead,
-        C.MemWrite,
-        C.Alu_Result[8:0],
-        C.RD_Two,
-        C.func3,
-        ReadData
+        C.mem_read,
+        C.mem_write,
+        RW_address,
+        C.rd2,
+        C.funct3,
+        mem_read_data
     );
 
-    assign wr      = C.MemWrite;
-    assign reade   = C.MemRead;
-    assign addr    = C.Alu_Result[8:0];
-    assign wr_data = C.RD_Two;
-    assign rd_data = ReadData;
+    assign tb_mem_write = C.mem_write;
+    assign tb_mem_read = C.mem_read;
+    assign tb_mem_addr = C.ALU_result[8:0];
+    assign tb_mem_write_data = C.rd2;
+    assign tb_mem_read_data = mem_read_data;
 
+    mem_wb_reg D;
     // MEM_WB_Reg D;
     always @(posedge clk) begin
-        if (reset)   // initialization
-            begin
-                D.RegWrite    <= 0;
-                D.MemtoReg    <= 0;
-                D.pc_plus_4   <= 0;
-                D.Alu_Result  <= 0;
-                D.MemReadData <= 0;
-                D.rd          <= 0;
-            end else begin
-            D.RegWrite    <= C.RegWrite;
-            D.MemtoReg    <= C.MemtoReg;
-            D.pc_plus_4   <= C.pc_plus_4;
-            D.Alu_Result  <= C.Alu_Result;
-            D.MemReadData <= ReadData;
-            D.rd          <= C.rd;
-            D.Curr_Instr  <= C.Curr_Instr;  //Debug Tmp
+        if (reset) begin // initialization
+            D.reg_write     <= 0;
+            D.reg_wb_src    <= 0;
+            D.pc_plus_4     <= 0;
+            D.ALU_result    <= 0;
+            D.mem_read_data <= 0;
+            D.rd            <= 0;
+        end
+        else begin
+            D.reg_write        <= C.reg_write;
+            D.reg_wb_src       <= C.reg_wb_src;
+            D.pc_plus_4        <= C.pc_plus_4;
+            D.ALU_result       <= C.ALU_result;
+            D.mem_read_data    <= mem_read_data;
+            D.rd               <= C.rd;
+            D.tb_current_instr <= C.tb_current_instr; //Debug Tmp
         end
     end
 
     //--// The LAST Block
 
     mux4 #(32) wbmux (
-        D.Alu_Result,
-        D.MemReadData,
+        D.ALU_result,
+        D.mem_read_data,
         D.pc_plus_4,
         32'b0,
-        D.MemtoReg,
-        WrmuxSrc
+        D.reg_wb_src,
+        wbmux_reg_wb_data
     );
 
-    assign WB_Data = WrmuxSrc;
 
 endmodule
