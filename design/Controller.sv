@@ -4,9 +4,6 @@ module Controller (
         //Input
         input  logic [6:0] opcode ,      //! 7-bit opcode field from the instruction
         //Outputs
-        output logic       ALU_src ,     //! Signals Src Mux where the second ALU operand will come from
-        //0: The operand comes from the ID/EX Register (Read Data 2);
-        //1: The operand comes from Imm_Gen (the immediate offset for Load/Store Instructions)
         output logic [1:0] reg_wb_src ,  //! Where the Write Back data will come from (Res MUX)
         //00: The value comes from the ALU.
         //01: The value comes from the Data Memory.
@@ -15,7 +12,10 @@ module Controller (
         output logic       reg_write ,   //! RegFile register at the Write register input will be written with the value on the Write data input
         output logic       mem_read ,    //! Data Memory contents at the Adress input will be put on the Read data output
         output logic       mem_write ,   //! Data Memory contents at the Adress input will be replaced by the value on the Write data input
-        output logic [1:0] ALU_op ,      //! Signals the ALU Controller the type of instruction it will recieve
+        output logic       ALU_src ,     //! Signals Src Mux where the second ALU operand will come from
+        //0: The operand comes from the ID/EX Register (Read Data 2);
+        //1: The operand comes from Imm_Gen (the immediate offset for Load/Store Instructions)
+        output logic [1:0] ALU_ctrl_op , //! Signals the ALU Controller the type of instruction it will recieve
         //00: Load/Store && JALR
         //01: Integer Computational
         //10: Branch
@@ -48,8 +48,8 @@ module Controller (
         reg_write = (opcode == LOAD || opcode == OP || opcode == OP_IMM || opcode == JALR);
         mem_read = (opcode == LOAD);
         mem_write = (opcode == STORE);
-        ALU_op[0] = (opcode == OP || opcode == OP_IMM);
-        ALU_op[1] = (opcode == BRANCH);
+        ALU_ctrl_op[0] = (opcode == OP || opcode == OP_IMM);
+        ALU_ctrl_op[1] = (opcode == BRANCH);
 
         case (opcode)
             JAL : ctrl_transfer = 2'b00;

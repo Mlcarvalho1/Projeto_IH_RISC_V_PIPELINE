@@ -18,7 +18,7 @@ package Pipe_Buf_Reg_PKG;
         logic reg_write ;
         logic mem_read ;
         logic mem_write ;
-        logic [ 1:0] ALU_op ;
+        logic [ 1:0] ALU_op_type ;
         logic [ 1:0] branch_op;
         logic [ 8:0] current_PC ;
         logic [31:0] rd1 ;

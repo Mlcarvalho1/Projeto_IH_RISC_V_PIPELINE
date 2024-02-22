@@ -2,38 +2,38 @@
 
 module tb_top;
 
-    //clock and reset signal declaration
-    logic        tb_clk, reset;
-    logic [8:0]  tb_pc;
-    logic [4:0]  reg_num;
-    logic [31:0] reg_data;
-    logic        reg_write_sig;
-    logic        wr;
-    logic        rd;
-    logic [8:0]  addr;
-    logic [31:0] wr_data;
-    logic [31:0] rd_data;
-
     localparam CLKPERIOD  = 10;
     localparam CLKDELAY   = CLKPERIOD / 2;
     localparam NUM_CYCLES = 50;
 
-    riscv riscV (
-        .clk(tb_clk),
-        .reset(reset),
-        .tb_pc(tb_pc),
-        .reg_num(reg_num),
-        .reg_data(reg_data),
-        .reg_write_sig(reg_write_sig),
-        .wr(wr),
-        .rd(rd),
-        .addr(addr),
-        .wr_data(wr_data),
-        .rd_data(rd_data)
+    logic        clk;
+    logic        reset;
+    logic [8:0]  PC;
+    logic [4:0]  reg_addr;
+    logic [31:0] reg_write_data;
+    logic        reg_write;
+    logic        mem_write;
+    logic        mem_read;
+    logic [8:0]  mem_addr;
+    logic [31:0] mem_write_data;
+    logic [31:0] mem_read_data;
+
+    riscv tb_riscv (
+        .clk (clk),
+        .reset (reset),
+        .tb_PC (PC),
+        .tb_reg_addr (reg_addr),
+        .tb_reg_write_data (reg_write_data),
+        .tb_reg_write (reg_write),
+        .tb_mem_write (mem_write),
+        .tb_mem_read (mem_read),
+        .tb_mem_addr (mem_addr),
+        .tb_mem_write_data(mem_write_data),
+        .tb_mem_read_data (mem_read_data)
     );
 
     initial begin
-        tb_clk = 0;
+        clk = 0;
         reset = 1;
         #(CLKPERIOD);
         reset = 0;
@@ -43,20 +43,20 @@ module tb_top;
         $stop;
     end
 
-    always @(posedge tb_clk) begin : REGISTER
-        if (reg_write_sig)
-            $display($time, ": Register [%d] written with value: [%X] | [%d]\n", reg_num, reg_data, $signed(reg_data));
+    always @(posedge clk) begin : REGISTER
+        if (reg_write)
+            $display($time, ": Register [%d] written with value: [%X] | [%d]\n", reg_addr, reg_write_data, $signed(reg_write_data));
     end : REGISTER
 
-    always @(posedge tb_clk) begin : MEMORY
-        if (wr && ~rd)
-            $display($time, ": Memory [%d] written with value: [%X] | [%d]\n", addr, wr_data, $signed(wr_data));
+    always @(posedge clk) begin : MEMORY
+        if (mem_write && ~mem_read)
+            $display($time, ": Memory [%d] written with value: [%X] | [%d]\n", mem_addr, mem_write_data, $signed(mem_write_data));
 
-        else if (rd && ~wr)
-            $display($time, ": Memory [%d] read with value: [%X] | [%d]\n", addr, rd_data, $signed(rd_data));
+        else if (mem_read && ~mem_write)
+            $display($time, ": Memory [%d] read with value: [%X] | [%d]\n", mem_addr, mem_read_data, $signed(mem_read_data));
     end : MEMORY
 
     //clock generator
-    always #(CLKDELAY) tb_clk = ~tb_clk;
+    always #(CLKDELAY) clk = ~clk;
 
 endmodule
