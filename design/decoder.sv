@@ -1,13 +1,13 @@
 module decoder (
-    input  logic [31:0] instr ,
-    output logic [ 2:0] opcode,
-    output logic [ 4:0] rd    ,
-    output logic [ 4:0] rs1   ,
-    output logic [ 4:0] rs2   ,
-    output logic [ 2:0] funct3,
-    output logic [ 6:0] funct7,
-    output logic [31:0] imm
-);
+        input  logic [31:0] instr,
+        output logic [ 6:0] opcode,
+        output logic [ 4:0] rd,
+        output logic [ 4:0] rs1,
+        output logic [ 4:0] rs2,
+        output logic [ 2:0] funct3,
+        output logic [ 6:0] funct7,
+        output logic [31:0] imm
+    );
 
     localparam OP     = 7'b0110011; //! (R-Type) Integer Register-Register Instructions
     localparam OP_IMM = 7'b0010011; //! (I-Type) Integer Register-Immediate Instructions
@@ -21,22 +21,22 @@ module decoder (
 
     always_comb begin
         opcode = instr[6:0];
-        rd     = (OP || OP_IMM || JALR || LOAD || LUI || JAL) ? instr[11:7] : 0;
-        rs1    = (OP || OP_IMM || JALR || LOAD || STORE || BRANCH) ? instr[19:15] : 0;
-        rs2    = (OP || STORE || BRANCH) ? instr[24:20] : 0;
-        funct3 = (OP || OP_IMM || JALR || LOAD || STORE || BRANCH) ? instr[14:12] : 0;
-        funct7 = (OP) ? instr[31:25] : 0;
+        rd     = (opcode == OP || opcode == OP_IMM || opcode == JALR || opcode == LOAD || opcode == LUI || opcode == JAL)      ? instr[11:7]  : 5'b0;
+        rs1    = (opcode == OP || opcode == OP_IMM || opcode == JALR || opcode == LOAD || opcode == STORE || opcode == BRANCH) ? instr[19:15] : 5'b0;
+        rs2    = (opcode == OP || opcode == STORE || opcode == BRANCH)                                                         ? instr[24:20] : 5'b0;
+        funct3 = (opcode == OP || opcode == OP_IMM || opcode == JALR || opcode == LOAD || opcode == STORE || opcode == BRANCH) ? instr[14:12] : 3'b0;
+        funct7 = (opcode == OP)                                                                                                ? instr[31:25] : 7'b0;
 
         case(opcode)
-            OP      : imm = 32'b0;
-            OP_IMM  : imm = 32'(signed'({instr[31:20]}));
-            JALR    : imm = 32'(signed'({instr[31:20]}));
-            LOAD    : imm = 32'(signed'({instr[31:20]}));
-            STORE   : imm = 32'(signed'({instr[31:25], instr[11:7]}));
-            BRANCH  : imm = 32'(signed'({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0}));
-            LUI     : imm = {instr[31:12], 12'b0};
-            JAL     : imm = 32'(signed'({instr[31],instr[19:12],instr[20],instr[30:21], 1'b0}));
-            default : imm = 32'b0;
-        endcase
+            OP     : imm = 32'b0;
+            OP_IMM : imm = 32'(signed'({instr[31:20]}));
+            JALR   : imm = 32'(signed'({instr[31:20]}));
+            LOAD   : imm = 32'(signed'({instr[31:20]}));
+            STORE  : imm = 32'(signed'({instr[31:25], instr[11:7]}));
+            BRANCH : imm = 32'(signed'({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0}));
+            LUI    : imm = {instr[31:12], 12'b0};
+            JAL    : imm = 32'(signed'({instr[31],instr[19:12],instr[20],instr[30:21], 1'b0}));
+            default: imm = 32'b0;
+        endcase;
     end
 endmodule

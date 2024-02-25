@@ -3,52 +3,52 @@
 import Pipe_Buf_Reg_PKG::*;
 
 module Datapath #(
-    parameter PC_W       = 9 , // Program Counter
-    parameter INS_W      = 32, // Instruction Width
-    parameter RF_ADDRESS = 5 , // Register File Address
-    parameter DATA_W     = 32, // Data WriteData
-    parameter DM_ADDRESS = 9 , // Data Memory Address
-    parameter ALU_CC_W   = 4   // ALU Control Code Width
-) (
-    input  logic                  clk          ,
-    input  logic                  reset        ,
-    input  logic                  RegWrite     , // Register file writing enable
-    input  logic [           1:0] MemtoReg     , // Memory or ALU or JAL MUX
-    input  logic                  ALUsrc       ,
-    input  logic                  MemWrite     , // Register file or Immediate MUX // Memroy Writing Enable
-    input  logic                  MemRead      , // Memroy Reading Enable
-    input  logic [           1:0] ctrl_transfer,
-    input  logic [           1:0] ALUOp        ,
-    input  logic [  ALU_CC_W-1:0] ALU_CC       , // ALU Control Code ( input of the ALU )
-    output logic [           6:0] opcode       ,
-    output logic [           6:0] Funct7       ,
-    output logic [           2:0] Funct3       ,
-    output logic [           1:0] ALUOp_Current,
-    output logic [    DATA_W-1:0] WB_Data      , //Result After the last MUX
-    // Para depuração no tesbench:
-    output logic [           4:0] reg_num      , //número do registrador que foi escrito
-    output logic [    DATA_W-1:0] reg_data     , //valor que foi escrito no registrador
-    output logic                  reg_write_sig, //sinal de escrita no registrador
-    output logic                  wr           , // write enable
-    output logic                  reade        , // read enable
-    output logic [DM_ADDRESS-1:0] addr         , // address
-    output logic [    DATA_W-1:0] wr_data      , // write data
-    output logic [    DATA_W-1:0] rd_data        // read data
-);
+        parameter PC_W       = 9,  // Program Counter
+        parameter INS_W      = 32, // Instruction Width
+        parameter RF_ADDRESS = 5,  // Register File Address
+        parameter DATA_W     = 32, // Data WriteData
+        parameter DM_ADDRESS = 9,  // Data Memory Address
+        parameter ALU_CC_W   = 4   // ALU Control Code Width
+    ) (
+        input  logic                  clk,
+        input  logic                  reset,
+        input  logic                  RegWrite,      // Register file writing enable
+        input  logic [ 1:0]           MemtoReg,      // Memory or ALU or JAL MUX
+        input  logic                  ALUsrc,
+        input  logic                  MemWrite,      // Register file or Immediate MUX // Memroy Writing Enable
+        input  logic                  MemRead,       // Memroy Reading Enable
+        input  logic [ 1:0]           ctrl_transfer,
+        input  logic [ 1:0]           ALUOp,
+        input  logic [ ALU_CC_W-1:0]  ALU_CC,        // ALU Control Code ( input of the ALU )
+        output logic [ 6:0]           opcode,
+        output logic [ 6:0]           Funct7,
+        output logic [ 2:0]           Funct3,
+        output logic [ 1:0]           ALUOp_Current,
+        output logic [ DATA_W-1:0]    WB_Data,       //Result After the last MUX
+        // Para depuração no tesbench:
+        output logic [ 4:0]           reg_num,       //número do registrador que foi escrito
+        output logic [ DATA_W-1:0]    reg_data,      //valor que foi escrito no registrador
+        output logic                  reg_write_sig, //sinal de escrita no registrador
+        output logic                  wr,            // write enable
+        output logic                  reade,         // read enable
+        output logic [DM_ADDRESS-1:0] addr,          // address
+        output logic [ DATA_W-1:0]    wr_data,       // write data
+        output logic [ DATA_W-1:0]    rd_data        // read data
+    );
 
-    logic [  PC_W-1:0] PC, PCPlus4, Next_PC;
-    logic [ INS_W-1:0] Instr       ;
+    logic [ PC_W-1:0]  PC, PCPlus4, Next_PC;
+    logic [ INS_W-1:0] Instr;
     logic [DATA_W-1:0] Reg1, Reg2;
-    logic [DATA_W-1:0] ReadData    ;
+    logic [DATA_W-1:0] ReadData;
     logic [DATA_W-1:0] SrcB, ALUResult;
     logic [DATA_W-1:0] ExtImm, BrImm, Old_PC_Four, BrPC;
-    logic [DATA_W-1:0] WrmuxSrc    ;
-    logic              PcSel       ; // mux select / flush signal
-    logic [       1:0] FAmuxSel    ;
-    logic [       1:0] FBmuxSel    ;
+    logic [DATA_W-1:0] WrmuxSrc;
+    logic              PcSel;                           // mux select / flush signal
+    logic [ 1:0]       FAmuxSel;
+    logic [ 1:0]       FBmuxSel;
     logic [DATA_W-1:0] FAmux_Result;
     logic [DATA_W-1:0] FBmux_Result;
-    logic              Reg_Stall   ; //1: PC fetch same, Register not update
+    logic              Reg_Stall;                       //1: PC fetch same, Register not update
 
     if_id_reg  A;
     id_ex_reg  B;
@@ -63,7 +63,7 @@ module Datapath #(
     );
     mux2 #(9) pcmux (
         PCPlus4,
-        BrPC[PC_W-1:0],
+        BrPC    [PC_W-1:0],
         PcSel,
         Next_PC
     );
@@ -82,32 +82,30 @@ module Datapath #(
 
     // IF_ID_Reg A;
     always @(posedge clk) begin
-        if ((reset) || (PcSel))   // initialization or flush
-            begin
-                A.Curr_Pc    <= 0;
-                A.Curr_Instr <= 0;
-            end
-        else if (!Reg_Stall)    // stall
-            begin
-                A.Curr_Pc    <= PC;
-                A.Curr_Instr <= Instr;
-            end
+        if ((reset) || (PcSel)) begin // initialization or flush
+            A.Curr_Pc    <= 0;
+            A.Curr_Instr <= 0;
+        end
+        else if (!Reg_Stall) begin // stall
+            A.Curr_Pc    <= PC;
+            A.Curr_Instr <= Instr;
+        end
     end
 
-    logic [ 2:0] dc_opcode;
-    logic [ 4:0] dc_rd    ;
-    logic [ 4:0] dc_rs1   ;
-    logic [ 4:0] dc_rs2   ;
+    logic [ 6:0] dc_opcode;
+    logic [ 4:0] dc_rd;
+    logic [ 4:0] dc_rs1;
+    logic [ 4:0] dc_rs2;
     logic [ 2:0] dc_funct3;
     logic [ 6:0] dc_funct7;
-    logic [31:0] dc_imm   ;
+    logic [31:0] dc_imm;
 
     decoder decode (
         A.Curr_Instr,
         dc_opcode,
-        dc_rd    ,
-        dc_rs1   ,
-        dc_rs2   ,
+        dc_rd,
+        dc_rs1,
+        dc_rs2,
         dc_funct3,
         dc_funct7,
         dc_imm
@@ -143,26 +141,26 @@ module Datapath #(
 
     // ID_EX_Reg B;
     always @(posedge clk) begin
-        if ((reset) || (Reg_Stall) || (PcSel))   // initialization or flush or generate a NOP if hazard
-            begin
-                B.ALUSrc        <= 0;
-                B.MemtoReg      <= 0;
-                B.RegWrite      <= 0;
-                B.MemRead       <= 0;
-                B.MemWrite      <= 0;
-                B.ALUOp         <= 0;
-                B.ctrl_transfer <= 0;
-                B.Curr_Pc       <= 0;
-                B.RD_One        <= 0;
-                B.RD_Two        <= 0;
-                B.RS_One        <= 0;
-                B.RS_Two        <= 0;
-                B.rd            <= 0;
-                B.ImmG          <= 0;
-                B.func3         <= 0;
-                B.func7         <= 0;
-                B.Curr_Instr    <= A.Curr_Instr;  //debug tmp
-            end else begin
+        if ((reset) || (Reg_Stall) || (PcSel)) begin // initialization or flush or generate a NOP if hazard
+            B.ALUSrc        <= 0;
+            B.MemtoReg      <= 0;
+            B.RegWrite      <= 0;
+            B.MemRead       <= 0;
+            B.MemWrite      <= 0;
+            B.ALUOp         <= 0;
+            B.ctrl_transfer <= 0;
+            B.Curr_Pc       <= 0;
+            B.RD_One        <= 0;
+            B.RD_Two        <= 0;
+            B.RS_One        <= 0;
+            B.RS_Two        <= 0;
+            B.rd            <= 0;
+            B.ImmG          <= 0;
+            B.func3         <= 0;
+            B.func7         <= 0;
+            B.Curr_Instr    <= A.Curr_Instr; //debug tmp
+        end
+        else begin
             B.ALUSrc        <= ALUsrc;
             B.MemtoReg      <= MemtoReg;
             B.RegWrite      <= RegWrite;
@@ -179,7 +177,7 @@ module Datapath #(
             B.ImmG          <= dc_imm;
             B.func3         <= dc_funct3;
             B.func7         <= dc_funct7;
-            B.Curr_Instr    <= A.Curr_Instr;  //debug tmp
+            B.Curr_Instr    <= A.Curr_Instr; //debug tmp
         end
     end
 
@@ -244,19 +242,19 @@ module Datapath #(
 
     // EX_MEM_Reg C;
     always @(posedge clk) begin
-        if (reset)   // initialization
-            begin
-                C.RegWrite   <= 0;
-                C.MemtoReg   <= 0;
-                C.MemRead    <= 0;
-                C.MemWrite   <= 0;
-                C.pc_plus_4  <= 0;
-                C.Alu_Result <= 0;
-                C.RD_Two     <= 0;
-                C.rd         <= 0;
-                C.func3      <= 0;
-                C.func7      <= 0;
-            end else begin
+        if (reset) begin // initialization
+            C.RegWrite   <= 0;
+            C.MemtoReg   <= 0;
+            C.MemRead    <= 0;
+            C.MemWrite   <= 0;
+            C.pc_plus_4  <= 0;
+            C.Alu_Result <= 0;
+            C.RD_Two     <= 0;
+            C.rd         <= 0;
+            C.func3      <= 0;
+            C.func7      <= 0;
+        end
+        else begin
             C.RegWrite   <= B.RegWrite;
             C.MemtoReg   <= B.MemtoReg;
             C.MemRead    <= B.MemRead;
@@ -267,7 +265,7 @@ module Datapath #(
             C.rd         <= B.rd;
             C.func3      <= B.func3;
             C.func7      <= B.func7;
-            C.Curr_Instr <= B.Curr_Instr;  // debug tmp
+            C.Curr_Instr <= B.Curr_Instr; // debug tmp
         end
     end
 
@@ -290,22 +288,22 @@ module Datapath #(
 
     // MEM_WB_Reg D;
     always @(posedge clk) begin
-        if (reset)   // initialization
-            begin
-                D.RegWrite    <= 0;
-                D.MemtoReg    <= 0;
-                D.pc_plus_4   <= 0;
-                D.Alu_Result  <= 0;
-                D.MemReadData <= 0;
-                D.rd          <= 0;
-            end else begin
+        if (reset) begin // initialization
+            D.RegWrite    <= 0;
+            D.MemtoReg    <= 0;
+            D.pc_plus_4   <= 0;
+            D.Alu_Result  <= 0;
+            D.MemReadData <= 0;
+            D.rd          <= 0;
+        end
+        else begin
             D.RegWrite    <= C.RegWrite;
             D.MemtoReg    <= C.MemtoReg;
             D.pc_plus_4   <= C.pc_plus_4;
             D.Alu_Result  <= C.Alu_Result;
             D.MemReadData <= ReadData;
             D.rd          <= C.rd;
-            D.Curr_Instr  <= C.Curr_Instr;  //Debug Tmp
+            D.Curr_Instr  <= C.Curr_Instr; //Debug Tmp
         end
     end
 
