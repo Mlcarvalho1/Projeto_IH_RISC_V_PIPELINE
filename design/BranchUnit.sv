@@ -38,7 +38,7 @@ module BranchUnit #(
                 end
                 JALR : begin // JALR
                     pc_sel    = 1;
-                    branch_pc = (pc_32 + ALU_result) & 32'hFFFFFFFE;
+                    branch_pc = (ALU_result) & 32'hFFFFFFFE;
                 end
                 BRANCH : begin // BRANCH
                     pc_sel    = ALU_result[0];
