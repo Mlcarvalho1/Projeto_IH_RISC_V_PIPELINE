@@ -5,35 +5,33 @@ import Pipe_Buf_Reg_PKG::*;
 module Datapath #(
         parameter PC_W       = 9,  // Program Counter
         parameter INS_W      = 32, // Instruction Width
-        parameter RF_ADDRESS = 5,  // Register File Address
         parameter DATA_W     = 32, // Data WriteData
         parameter DM_ADDRESS = 9,  // Data Memory Address
         parameter ALU_CC_W   = 4   // ALU Control Code Width
     ) (
         input  logic                  clk,
         input  logic                  reset,
-        input  logic                  RegWrite,      // Register file writing enable
-        input  logic [ 1:0]           MemtoReg,      // Memory or ALU or JAL MUX
+        input  logic                  RegWrite,                // Register file writing enable
+        input  logic [ 1:0]           MemtoReg,                // Memory or ALU or JAL MUX
         input  logic                  ALUsrc,
-        input  logic                  MemWrite,      // Register file or Immediate MUX // Memroy Writing Enable
-        input  logic                  MemRead,       // Memroy Reading Enable
-        input  logic [ 1:0]           ctrl_transfer,
-        input  logic [ 1:0]           ALUOp,
-        input  logic [ ALU_CC_W-1:0]  ALU_CC,        // ALU Control Code ( input of the ALU )
-        output logic [ 6:0]           opcode,
-        output logic [ 6:0]           Funct7,
-        output logic [ 2:0]           Funct3,
-        output logic [ 1:0]           ALUOp_Current,
-        output logic [ DATA_W-1:0]    WB_Data,       //Result After the last MUX
+        input  logic                  MemWrite,                // Register file or Immediate MUX // Memroy Writing Enable
+        input  logic                  MemRead,                 // Memroy Reading Enable
+        input  logic [ 1:0]           ctrl_transfer_CTRL_OUT,
+        input  logic [ 1:0]           ALUOp_CTRL_OUT,
+        input  logic [ ALU_CC_W-1:0]  ALU_CC_ALUCTRL_OUT,      // ALU Control Code ( input of the ALU )
+        output logic [ 6:0]           opcode_CTRL_IN,
+        output logic [ 6:0]           Funct7_ALUCTRL_IN,
+        output logic [ 2:0]           Funct3_ALUCTRL_IN,
+        output logic [ 1:0]           ALUOp_Current_ALUCTRL_IN,
         // Para depuração no tesbench:
-        output logic [ 4:0]           reg_num,       //número do registrador que foi escrito
-        output logic [ DATA_W-1:0]    reg_data,      //valor que foi escrito no registrador
-        output logic                  reg_write_sig, //sinal de escrita no registrador
-        output logic                  wr,            // write enable
-        output logic                  reade,         // read enable
-        output logic [DM_ADDRESS-1:0] addr,          // address
-        output logic [ DATA_W-1:0]    wr_data,       // write data
-        output logic [ DATA_W-1:0]    rd_data        // read data
+        output logic [ 4:0]           reg_num,                 //número do registrador que foi escrito
+        output logic [ DATA_W-1:0]    reg_data,                //valor que foi escrito no registrador
+        output logic                  reg_write_sig,           //sinal de escrita no registrador
+        output logic                  wr,                      // write enable
+        output logic                  reade,                   // read enable
+        output logic [DM_ADDRESS-1:0] addr,                    // address
+        output logic [ DATA_W-1:0]    wr_data,                 // write data
+        output logic [ DATA_W-1:0]    rd_data                  // read data
     );
 
     logic [ PC_W-1:0]  PC, PCPlus4, Next_PC;
@@ -41,14 +39,14 @@ module Datapath #(
     logic [DATA_W-1:0] Reg1, Reg2;
     logic [DATA_W-1:0] ReadData;
     logic [DATA_W-1:0] SrcB, ALUResult;
-    logic [DATA_W-1:0] ExtImm, BrImm, Old_PC_Four, BrPC;
+    logic [DATA_W-1:0] BrPC;
     logic [DATA_W-1:0] WrmuxSrc;
-    logic              PcSel;                           // mux select / flush signal
+    logic              PcSel;               // mux select / flush signal
     logic [ 1:0]       FAmuxSel;
     logic [ 1:0]       FBmuxSel;
     logic [DATA_W-1:0] FAmux_Result;
     logic [DATA_W-1:0] FBmux_Result;
-    logic              Reg_Stall;                       //1: PC fetch same, Register not update
+    logic              Reg_Stall;           //1: PC fetch same, Register not update
 
     if_id_reg  A;
     id_ex_reg  B;
@@ -111,7 +109,7 @@ module Datapath #(
         dc_imm
     );
 
-    assign opcode = dc_opcode;
+    assign opcode_CTRL_IN = dc_opcode;
 
     //--// The Hazard Detection Unit
     HazardDetection detect (
@@ -158,7 +156,6 @@ module Datapath #(
             B.ImmG          <= 0;
             B.func3         <= 0;
             B.func7         <= 0;
-            B.Curr_Instr    <= A.Curr_Instr; //debug tmp
         end
         else begin
             B.ALUSrc        <= ALUsrc;
@@ -166,8 +163,8 @@ module Datapath #(
             B.RegWrite      <= RegWrite;
             B.MemRead       <= MemRead;
             B.MemWrite      <= MemWrite;
-            B.ALUOp         <= ALUOp;
-            B.ctrl_transfer <= ctrl_transfer;
+            B.ALUOp         <= ALUOp_CTRL_OUT;
+            B.ctrl_transfer <= ctrl_transfer_CTRL_OUT;
             B.Curr_Pc       <= A.Curr_Pc;
             B.RD_One        <= Reg1;
             B.RD_Two        <= Reg2;
@@ -177,7 +174,6 @@ module Datapath #(
             B.ImmG          <= dc_imm;
             B.func3         <= dc_funct3;
             B.func7         <= dc_funct7;
-            B.Curr_Instr    <= A.Curr_Instr; //debug tmp
         end
     end
 
@@ -194,9 +190,9 @@ module Datapath #(
     );
 
     // // //ALU
-    assign Funct7        = B.func7;
-    assign Funct3        = B.func3;
-    assign ALUOp_Current = B.ALUOp;
+    assign Funct7_ALUCTRL_IN        = B.func7;
+    assign Funct3_ALUCTRL_IN        = B.func3;
+    assign ALUOp_Current_ALUCTRL_IN = B.ALUOp;
 
     mux4 #(32) FAmux (
         B.RD_One,
@@ -223,7 +219,7 @@ module Datapath #(
     alu alu_module (
         FAmux_Result,
         SrcB,
-        ALU_CC,
+        ALU_CC_ALUCTRL_OUT,
         ALUResult
     );
 
@@ -265,7 +261,7 @@ module Datapath #(
             C.rd         <= B.rd;
             C.func3      <= B.func3;
             C.func7      <= B.func7;
-            C.Curr_Instr <= B.Curr_Instr; // debug tmp
+            C.Curr_Pc    <= B.Curr_Pc;
         end
     end
 
@@ -303,7 +299,7 @@ module Datapath #(
             D.Alu_Result  <= C.Alu_Result;
             D.MemReadData <= ReadData;
             D.rd          <= C.rd;
-            D.Curr_Instr  <= C.Curr_Instr; //Debug Tmp
+            D.Curr_Pc     <= C.Curr_Pc;
         end
     end
 
@@ -317,7 +313,5 @@ module Datapath #(
         D.MemtoReg,
         WrmuxSrc
     );
-
-    assign WB_Data = WrmuxSrc;
 
 endmodule
