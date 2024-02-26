@@ -28,7 +28,8 @@ module BranchUnit #(
 
         if (halt) begin
             pc_sel    = 1;
-            branch_pc = 32'hFFFFFFFF;
+            branch_pc = 32'(-1);
+            $display("=== HALT ===");
         end
         else begin
             case (ctrl_transfer)

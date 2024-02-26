@@ -23,6 +23,7 @@ module riscv #(
     logic       MemWrite;
     logic [1:0] ALUop;
     logic [1:0] ctrl_transfer;
+    logic       halt;
     logic [1:0] ALUop_Reg;
     logic [6:0] Funct7;
     logic [2:0] Funct3;
@@ -36,7 +37,8 @@ module riscv #(
         MemRead,
         MemWrite,
         ALUop,
-        ctrl_transfer
+        ctrl_transfer,
+        halt
     );
 
     ALUController ac (
@@ -55,6 +57,7 @@ module riscv #(
         MemWrite,
         MemRead,
         ctrl_transfer,
+        halt,
         ALUop,
         Operation,
         opcode,
