@@ -43,15 +43,15 @@ module tb_top;
 
     always @(posedge tb_clk) begin : REGISTER
         if (reg_write_sig)
-            $display($time," REG Write: reg[%d] value[%d] | [%d]\n", reg_num, reg_data, $signed(reg_data));
+            $display($time," REG Write: reg[%d] value[%d] | [%d] | [%b]\n", reg_num, reg_data, $signed(reg_data), reg_data);
     end : REGISTER
 
     always @(posedge tb_clk) begin : MEMORY
         if (wr && ~rd)
-            $display($time," MEM Write: addr[%d] value[%d] | [%d]\n", addr, wr_data, $signed(wr_data));
+            $display($time," MEM Write: addr[%d] value[%d] | [%d] | [%b]\n", addr, wr_data, $signed(wr_data), reg_data);
 
         else if (rd && ~wr)
-            $display($time," MEM Read: addr[%d] value[%d] | [%d]\n", addr, rd_data, $signed(rd_data));
+            $display($time," MEM Read: addr[%d] value[%d] | [%d] | [%b]\n", addr, rd_data, $signed(rd_data), reg_data);
     end : MEMORY
 
     //clock generator

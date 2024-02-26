@@ -13,16 +13,16 @@ As instruções a serem implementadas são as do conjunto RV32I, que é parte of
 |-----------|:------------:|:--------:|
 | **Instruções da ALU**               |
 | `ADD`     |     ✅     |     ✅    |
-| `ADDI`    |     ❌     |     ❌    |
+| `ADDI`    |     ✅     |     ✅    |
 | `SUB`     |     ✅     |     ✅    |
 | `AND`     |     ✅     |     ✅    |
 | `OR`      |     ✅     |     ✅    |
 | `XOR`     |     ✅     |     ✅    |
-| `SLLI`    |     ❌     |     ❌    |
-| `SRLI`    |     ❌     |     ❌    |
-| `SRAI`    |     ❌     |     ❌    |
-| `SLT`     |     ❌     |     ❌    |
-| `SLTI`    |     ❌     |     ❌    |
+| `SLLI`    |     ✅     |     ✅    |
+| `SRLI`    |     ✅     |     ✅    |
+| `SRAI`    |     ✅     |     ✅    |
+| `SLT`     |     ✅     |     ✅    |
+| `SLTI`    |     ✅     |     ✅    |
 | `BEQ`     |     ✅     |     ✅    |
 | `BNE`     |     ✅     |     ✅    |
 | `BLT`     |     ✅     |     ✅    |
@@ -33,7 +33,7 @@ As instruções a serem implementadas são as do conjunto RV32I, que é parte of
 | `LB`      |     ❌     |     ❌    |
 | `LBU`     |     ❌     |     ❌    |
 | `LUI`     |     ❌     |     ❌    |
-| `SW`      |     ✅     |     ❌    |
+| `SW`      |     ✅     |     ✅    |
 | `SH`      |     ❌     |     ❌    |
 | `SB`      |     ❌     |     ❌    |
 | **Saltos Incondicionais**           |
