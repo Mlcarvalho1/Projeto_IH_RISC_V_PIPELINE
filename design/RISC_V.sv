@@ -1,73 +1,77 @@
 `timescale 1ns / 1ps
 
 module riscv #(
-    parameter DATA_W = 32
-) (
-    input logic clk,
-    reset,  // clock and reset signals
-    output logic [31:0] WB_Data,  // The ALU_Result
+        parameter DATA_W = 32
+    ) (
+        input  logic              clk,
+                                  reset,        // clock and reset signals
+        output logic [ 4:0]       reg_num,
+        output logic [ 31:0]      reg_data,
+        output logic              reg_write_sig,
+        output logic              wr,
+        output logic              rd,
+        output logic [ 8:0]       addr,
+        output logic [DATA_W-1:0] wr_data,
+        output logic [DATA_W-1:0] rd_data
+    );
 
-    output logic [4:0] reg_num,
-    output logic [31:0] reg_data,
-    output logic reg_write_sig,
+    logic [6:0] opcode;
+    logic       ALUSrc;
+    logic [1:0] MemtoReg;
+    logic       RegWrite;
+    logic       MemRead;
+    logic       MemWrite;
+    logic [1:0] ALUop;
+    logic [1:0] ctrl_transfer;
+    logic       halt;
+    logic [1:0] ALUop_Reg;
+    logic [6:0] Funct7;
+    logic [2:0] Funct3;
+    logic [3:0] Operation;
 
-    output logic wr,
-    output logic rd,
-    output logic [8:0] addr,
-    output logic [DATA_W-1:0] wr_data,
-    output logic [DATA_W-1:0] rd_data
-);
+    Controller c (
+        opcode,
+        ALUSrc,
+        MemtoReg,
+        RegWrite,
+        MemRead,
+        MemWrite,
+        ALUop,
+        ctrl_transfer,
+        halt
+    );
 
-  logic [6:0] opcode;
-  logic ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch;
-  logic [1:0] ALUop;
-  logic [1:0] ALUop_Reg;
-  logic [6:0] Funct7;
-  logic [2:0] Funct3;
-  logic [3:0] Operation;
+    ALUController ac (
+        ALUop_Reg,
+        Funct7,
+        Funct3,
+        Operation
+    );
 
-  Controller c (
-      opcode,
-      ALUSrc,
-      MemtoReg,
-      RegWrite,
-      MemRead,
-      MemWrite,
-      ALUop,
-      Branch
-  );
-
-  ALUController ac (
-      ALUop_Reg,
-      Funct7,
-      Funct3,
-      Operation
-  );
-
-  Datapath dp (
-      clk,
-      reset,
-      RegWrite,
-      MemtoReg,
-      ALUSrc,
-      MemWrite,
-      MemRead,
-      Branch,
-      ALUop,
-      Operation,
-      opcode,
-      Funct7,
-      Funct3,
-      ALUop_Reg,
-      WB_Data,
-      reg_num,
-      reg_data,
-      reg_write_sig,
-      wr,
-      rd,
-      addr,
-      wr_data,
-      rd_data
-  );
+    Datapath dp (
+        clk,
+        reset,
+        RegWrite,
+        MemtoReg,
+        ALUSrc,
+        MemWrite,
+        MemRead,
+        ctrl_transfer,
+        halt,
+        ALUop,
+        Operation,
+        opcode,
+        Funct7,
+        Funct3,
+        ALUop_Reg,
+        reg_num,
+        reg_data,
+        reg_write_sig,
+        wr,
+        rd,
+        addr,
+        wr_data,
+        rd_data
+    );
 
 endmodule
