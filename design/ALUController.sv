@@ -32,6 +32,7 @@ module ALUController (
                         case (Funct7)
                             7'b0000000: Operation = 4'b0010; // ADD
                             7'b0100000: Operation = 4'b0001; // SUB
+                            default: Operation = 4'b0010; // ADDI
                         endcase
                     3'b100: Operation = 4'b0101; // XOR
                     3'b110: Operation = 4'b0100; // OR
