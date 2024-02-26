@@ -55,6 +55,12 @@ INSTRUCTION = {
   "funct3": "000",
   "funct7": ""
  },
+ "HALT": {
+  "format": "HALT",
+  "opcode": "1111111",
+  "funct3": "",
+  "funct7": ""
+ },
  "beq": {
   "format": "B",
   "opcode": "1100011",
@@ -259,11 +265,11 @@ INSTRUCTION = {
 # creates the file and writes the header
 def create_file(file_name):
 	header = ("DEPTH = 65536;          -- The size of memory in words\n"
-	          "WIDTH = 8;              -- The size of data in bits\n"
-	          "ADDRESS_RADIX = DEC;    -- The radix for address values\n"
-	          "DATA_RADIX = BIN;       -- The radix for data values\n"
-	          "CONTENT                 -- Start of (address: data pairs)\n"
-	          "BEGIN\n\n")
+			  "WIDTH = 8;              -- The size of data in bits\n"
+			  "ADDRESS_RADIX = DEC;    -- The radix for address values\n"
+			  "DATA_RADIX = BIN;       -- The radix for data values\n"
+			  "CONTENT                 -- Start of (address: data pairs)\n"
+			  "BEGIN\n\n")
 
 	with open(file_name, "w") as file:
 		file.write(header)
@@ -368,8 +374,11 @@ def translate_instruction(instruction):
 		opcode = INSTRUCTION[instr]["opcode"]
 		funct3 = INSTRUCTION[instr]["funct3"]
 		funct7 = INSTRUCTION[instr]["funct7"]
+		
+		if (INSTRUCTION[instr]["format"] == "HALT"):
+			binary = "1" * 32
 
-		if (INSTRUCTION[instr]["format"] not in ["S", "B"]):
+		elif (INSTRUCTION[instr]["format"] not in ["S", "B"]):
 			rd = instruction.split(" ")[1].split(",")[0]
 
 			check_register(rd)

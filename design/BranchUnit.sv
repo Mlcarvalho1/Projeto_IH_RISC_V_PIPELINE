@@ -1,26 +1,53 @@
 `timescale 1ns / 1ps
 
-module BranchUnit #(parameter PC_W = 9) (
-    input  logic [PC_W-1:0] current_PC  , //! Current Program Counter
-    input  logic [    31:0] imm         , //! Generated immediate from imm_Gen
-    input  logic            branch      , //! Signal from the Controller that the current instruction is a branch
-    input  logic [    31:0] ALU_result  , //! Result from ALU comparison
-    output logic [    31:0] next_PC_imm , //! PC+immediate
-    output logic [    31:0] next_PC_four, //! PC+4
-    output logic [    31:0] branch_PC   , //! PC+immediate if branch is taken, otherwise 0
-    output logic            PC_sel        //! Signal to PC Mux wether branch will be taken
-    //0: PC = PC+4
-    //1: PC = branch_PC
-);
+module BranchUnit #(
+        parameter WIDTH = 9
+    ) (
+        input  logic [WIDTH-1:0] current_pc ,   //! Current Program Counter
+        input  logic [ 31:0]     imm ,          //! Generated immediate from imm_Gen
+        input  logic [ 1:0]      ctrl_transfer, //! Signal from the Controller that the current instruction is a branch
+        input  logic             halt ,
+        input  logic [ 31:0]     ALU_result ,   //! Result from ALU comparison
+        output logic [ 31:0]     branch_pc ,    //! pc  depending on control transfer type
+        output logic [ 31:0]     pc_plus_4 ,
+        output logic             pc_sel         //! Signal to pc Mux wether branch will be taken
+    //0: pc = pc+4
+    //1: pc = branch_pc
+    );
 
-    logic [31:0] PC_full;
-    assign PC_full      = {23'b0, current_PC};
-    assign next_PC_imm  = PC_full + imm;
-    assign next_PC_four = PC_full + 32'b100;
 
-    logic branch_result;
-    assign branch_result = branch && ALU_result[0];
-    assign branch_PC     = (branch_result) ? next_PC_imm : 32'b0;
-    assign PC_sel        = branch_result;
+    localparam BRANCH = 2'b01;
+    localparam JAL    = 2'b10;
+    localparam JALR   = 2'b11;
+
+    logic [31:0] pc_32;
+    assign pc_32 = 32'(current_pc);
+
+    always_comb begin
+        pc_plus_4 = pc_32 + 32'd4;
+
+        if (halt) begin
+            pc_sel    = 1;
+            branch_pc = 32'(-1);
+            $display("=== HALT ===");
+        end
+        else begin
+            case (ctrl_transfer)
+                JAL : begin // JAL
+                    pc_sel    = 1;
+                    branch_pc = pc_32 + imm;
+                end
+                JALR : begin // JALR
+                    pc_sel    = 1;
+                    branch_pc = (ALU_result) & 32'hFFFFFFFE;
+                end
+                BRANCH : begin // BRANCH
+                    pc_sel    = ALU_result[0];
+                    branch_pc = pc_32 + imm;
+                end
+                default : pc_sel = 0;
+            endcase
+        end
+    end
 
 endmodule
