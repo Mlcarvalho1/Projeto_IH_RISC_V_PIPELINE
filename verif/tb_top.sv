@@ -48,10 +48,11 @@ module tb_top;
 
     always @(posedge tb_clk) begin : MEMORY
         if (wr && ~rd)
-            $display($time," MEM Write: addr[%d] value[%d] | [%d] | [%b]\n", addr, wr_data, $signed(wr_data), reg_data);
+            $display($time," MEM Write: addr[%d] reg value[%d] | [%d] | [%b]\n", addr, wr_data, $signed(wr_data), wr_data);
+        // No caso de SB e SH, o testbench só mostra o valor do registrador que escreveu. Dar LW pra testar o valor realmente escrito
 
         else if (rd && ~wr)
-            $display($time," MEM Read: addr[%d] value[%d] | [%d] | [%b]\n", addr, rd_data, $signed(rd_data), reg_data);
+            $display($time," MEM Read: addr[%d] mem value[%d] | [%d] | [%b]\n", addr, rd_data, $signed(rd_data), rd_data);
     end : MEMORY
 
     //clock generator
