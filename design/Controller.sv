@@ -44,10 +44,10 @@ module Controller (
 
 
     always_comb begin
-        ALU_src        = (opcode == LOAD || opcode == STORE || opcode == OP_IMM || opcode == JALR);
+        ALU_src        = (opcode == LOAD || opcode == LUI || opcode == STORE || opcode == OP_IMM || opcode == JALR);
         wb_data_src[0] = (opcode == LOAD);
         wb_data_src[1] = (opcode == JAL || opcode == JALR);
-        reg_write      = (opcode == LOAD || opcode == OP || opcode == OP_IMM || opcode == JAL || opcode == JALR);
+        reg_write      = (opcode == LOAD || opcode == LUI || opcode == OP || opcode == OP_IMM || opcode == JAL || opcode == JALR);
         mem_read       = (opcode == LOAD);
         mem_write      = (opcode == STORE);
         ALU_op[0]      = (opcode == BRANCH);

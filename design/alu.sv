@@ -35,6 +35,8 @@ module alu #(
                 ALUResult = 32'(signed'(SrcA) < signed'(SrcB));
             4'd12: // BGE
                 ALUResult = 32'(signed'(SrcA) >= signed'(SrcB));
+	    4'd13: // LUI
+		    ALUResult = 20'(signed'(SrcB));
             default :
                 ALUResult = 32'b0;
         endcase
