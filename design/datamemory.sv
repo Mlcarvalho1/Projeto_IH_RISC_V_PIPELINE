@@ -25,40 +25,36 @@ module datamemory #(
         .Dataout(Dataout),
         .Wr(Wr)
     );
+
+    assign raddress = {{22{1'b0}}, a[8:2], {2{1'b0}}};
+    assign waddress = {{22{1'b0}}, a[8:2], {2{1'b0}}};
+
     always_ff @(*) begin
-        raddress = {{22{1'b0}}, a[8:2], {2{1'b0}}};
-        waddress = {{22{1'b0}}, a[8:2], {2{1'b0}}};
-        Datain   = wd;
-        Wr       = 4'b0000;
         if (MemRead) begin
             case (Funct3)
-                3'b100: //LBU
-                    rd <= Dataout[0:7];
-                3'b010: //LW
-                    rd <= Dataout;
-                3'b001: //LH
-                    rd <= $signed(Dataout[0:15]);
-                3'b000: //LB
-                    rd <= $signed(Dataout[0:7]);
-                default: rd <= Dataout;
+                3'h0   : rd <= 32'(signed'(Dataout[7:0]));  // LB
+                3'h1   : rd <= 32'(signed'(Dataout[15:0])); // LH
+                3'h2   : rd <= Dataout;                     // LW
+                3'h4   : rd <= Dataout[7:0];                // LBU
+                default: rd <= 32'b0;
             endcase
         end
         else if (MemWrite) begin
             case (Funct3)
-                3'b000: begin //SB
-                    Wr     <= 4'b1000;
+                3'h0: begin // SB
+                    Wr     <= 4'b0001;
                     Datain <= wd;
                 end
-                3'b001: begin //SH
-                    Wr     <= 4'b1100;
+                3'h1: begin // SH
+                    Wr     <= 4'b0011;
                     Datain <= wd;
                 end
-                3'b010: begin //SW
+                3'h2: begin // SW
                     Wr     <= 4'b1111;
                     Datain <= wd;
                 end
                 default: begin
-                    Wr     <= 4'b1111;
+                    Wr     <= 4'b0000;
                     Datain <= wd;
                 end
             endcase
