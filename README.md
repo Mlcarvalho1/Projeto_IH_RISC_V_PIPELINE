@@ -29,13 +29,13 @@ As instruções a serem implementadas são as do conjunto RV32I, que é parte of
 | `BGE`     |     ✅     |     ✅    |
 | **Load/Store**                      |
 | `LW`      |     ✅     |     ✅    |
-| `LH`      |     ❌     |     ❌    |
-| `LB`      |     ❌     |     ❌    |
-| `LBU`     |     ❌     |     ❌    |
-| `LUI`     |     ❌     |     ❌    |
+| `LH`      |     ✅     |     ✅    |
+| `LB`      |     ✅     |     ✅    |
+| `LBU`     |     ✅     |     ✅    |
+| `LUI`     |     ✅     |     ✅    |
 | `SW`      |     ✅     |     ✅    |
-| `SH`      |     ❌     |     ❌    |
-| `SB`      |     ❌     |     ❌    |
+| `SH`      |     ✅     |     ✅    |
+| `SB`      |     ✅     |     ✅    |
 | **Saltos Incondicionais**           |
 | `JAL`     |     ✅     |     ✅    |
 | `JALR`    |     ✅     |     ✅    |
