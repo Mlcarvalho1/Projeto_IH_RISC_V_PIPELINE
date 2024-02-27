@@ -42,12 +42,12 @@ module Controller (
     localparam LUI    = 7'b0110111; //! (U-Type) Load Upper Immediate
     localparam STORE  = 7'b0100011; //! (S-Type) Store Instruction
 
-	
+
     always_comb begin
-        ALU_src        = (opcode == LOAD || opcode == STORE || opcode == OP_IMM || opcode == JALR || opcode== LUI);
+        ALU_src        = (opcode == LOAD || opcode == LUI || opcode == STORE || opcode == OP_IMM || opcode == JALR);
         wb_data_src[0] = (opcode == LOAD);
         wb_data_src[1] = (opcode == JAL || opcode == JALR);
-        reg_write      = (opcode == LOAD || opcode == OP || opcode == OP_IMM || opcode == JAL || opcode == JALR);
+        reg_write      = (opcode == LOAD || opcode == LUI || opcode == OP || opcode == OP_IMM || opcode == JAL || opcode == JALR);
         mem_read       = (opcode == LOAD);
         mem_write      = (opcode == STORE);
         ALU_op[0]      = (opcode == BRANCH);
